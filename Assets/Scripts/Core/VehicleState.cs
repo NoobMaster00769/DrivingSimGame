@@ -5,10 +5,10 @@ public abstract class VehicleState
     protected VehicleStateMachine stateMachine;
     protected VehicleContext context;
 
-    public VehicleState(VehicleStateMachine stateMachine, VehicleContext context)
+    protected VehicleState(VehicleStateMachine sm, VehicleContext ctx)
     {
-        this.stateMachine = stateMachine;
-        this.context = context;
+        stateMachine = sm;
+        context = ctx;
     }
 
     public virtual void Enter() { }

@@ -7,61 +7,118 @@ public class DrivingState : VehicleState
 
     public override void FixedUpdate()
     {
-        Rigidbody rb = context.rb;
-        if (rb == null) return;
+        float throttle = context.input.Throttle;
+        float steering = context.input.Steering;
+        float handbrake = context.input.Brake;
 
-        float throttle = context.throttle;
-        Vector3 forward = context.transform.forward;
+        // ---------------- MOTOR ----------------
+        float motor = throttle * context.motorForce;
+        context.colliders.RRWheel.motorTorque = motor;
+        context.colliders.RLWheel.motorTorque = motor;
 
-        // Get current forward speed
-        float speed = Vector3.Dot(rb.velocity, forward);
+        // ---------------- BRAKES ----------------
+        if (Mathf.Abs(throttle) < 0.05f)
+            ApplyBrake(context.brakeForce);
+        else
+            ReleaseBrakes();
 
-        // -------- ACCELERATION --------
-        if (throttle > 0.01f)
+        // ---------------- STEERING ----------------
+        float targetSteer = steering * context.maxSteerAngle;
+
+        float speedFactor = Mathf.InverseLerp(0f, context.maxSpeed, context.rb.velocity.magnitude);
+        float steerLimit = Mathf.Lerp(context.maxSteerAngle, context.maxSteerAngle * 0.3f, speedFactor);
+        targetSteer = Mathf.Clamp(targetSteer, -steerLimit, steerLimit);
+
+        float currentSteer = context.colliders.FLWheel.steerAngle;
+        float smoothSteer = Mathf.Lerp(currentSteer, targetSteer, Time.fixedDeltaTime * context.steerResponse);
+
+        context.colliders.FLWheel.steerAngle = smoothSteer;
+        context.colliders.FRWheel.steerAngle = smoothSteer;
+
+        // ----- BRAKE / HANDBRAKE -----
+        if (context.input.Brake > 0.1f)
         {
-            // Accelerate forward
-            float accel = throttle * context.motorForce;
-            speed += accel * Time.fixedDeltaTime;
+            // Rear wheels only (drift)
+            context.colliders.RRWheel.brakeTorque = context.brakeForce;
+            context.colliders.RLWheel.brakeTorque = context.brakeForce;
+
+            // Front wheels free to steer
+            context.colliders.FRWheel.brakeTorque = 0f;
+            context.colliders.FLWheel.brakeTorque = 0f;
         }
-        // -------- BRAKING / REVERSE --------
-        else if (throttle < -0.01f)
-        {
-            // If moving forward -> brake
-            if (speed > 0.1f)
-            {
-                speed -= context.brakeForce * Time.fixedDeltaTime;
-            }
-            // If stopped or nearly stopped → reverse
-            else
-            {
-                speed += throttle * context.reverseForce * Time.fixedDeltaTime;
-            }
-        }
-        // -------- NATURAL ROLLING RESISTANCE --------
         else
         {
-            speed = Mathf.MoveTowards(speed, 0f, context.rollingResistance * Time.fixedDeltaTime);
+            ReleaseBrakes();
         }
 
-        // Clamp final speed
-        speed = Mathf.Clamp(speed, -context.maxSpeed, context.maxSpeed);
 
-        // Apply velocity
-        Vector3 newVelocity = forward * speed;
-        newVelocity.y = rb.velocity.y; // keep gravity
+        // ---------------- WEIGHT TRANSFER ----------------
+        ApplyWeightTransfer();
 
-        rb.velocity = newVelocity;
+        // ---------------- VISUALS ----------------
+        UpdateWheelVisuals();
     }
 
-    public override void Update()
+    void ApplyBrake(float force)
     {
-        float speed = Vector3.Dot(context.rb.velocity, context.transform.forward);
+        context.colliders.FRWheel.brakeTorque = force;
+        context.colliders.FLWheel.brakeTorque = force;
+        context.colliders.RRWheel.brakeTorque = force;
+        context.colliders.RLWheel.brakeTorque = force;
+    }
 
-        // Only go idle if car is basically stopped AND no throttle input
-        if (Mathf.Abs(speed) < 0.1f && Mathf.Abs(context.throttle) < 0.01f)
+    void ReleaseBrakes()
+    {
+        context.colliders.FRWheel.brakeTorque = 0;
+        context.colliders.FLWheel.brakeTorque = 0;
+        context.colliders.RRWheel.brakeTorque = 0;
+        context.colliders.RLWheel.brakeTorque = 0;
+    }
+
+    void ApplyHandbrake(bool active)
+    {
+        WheelFrictionCurve sideFriction;
+
+        if (active)
         {
-            stateMachine.ChangeState(new IdleState(stateMachine, context));
+            sideFriction = context.colliders.RRWheel.sidewaysFriction;
+            sideFriction.stiffness = 0.4f;
+            context.colliders.RRWheel.sidewaysFriction = sideFriction;
+            context.colliders.RLWheel.sidewaysFriction = sideFriction;
+
+            context.colliders.RRWheel.brakeTorque = context.brakeForce * 2f;
+            context.colliders.RLWheel.brakeTorque = context.brakeForce * 2f;
+        }
+        else
+        {
+            sideFriction = context.colliders.RRWheel.sidewaysFriction;
+            sideFriction.stiffness = 1.5f;
+            context.colliders.RRWheel.sidewaysFriction = sideFriction;
+            context.colliders.RLWheel.sidewaysFriction = sideFriction;
         }
     }
 
+    void ApplyWeightTransfer()
+    {
+        Vector3 localVel = context.transform.InverseTransformDirection(context.rb.velocity);
+        float zShift = Mathf.Clamp(localVel.z * 0.02f, -0.25f, 0.25f);
+        context.rb.centerOfMass = new Vector3(0f, -0.4f, -zShift);
+    }
+
+    void UpdateWheelVisuals()
+    {
+        UpdateWheel(context.colliders.FLWheel, context.FL_WheelMesh);
+        UpdateWheel(context.colliders.FRWheel, context.FR_WheelMesh);
+        UpdateWheel(context.colliders.RLWheel, context.RL_WheelMesh);
+        UpdateWheel(context.colliders.RRWheel, context.RR_WheelMesh);
+    }
+
+    void UpdateWheel(WheelCollider col, Transform wheelMesh)
+    {
+        Vector3 pos;
+        Quaternion rot;
+        col.GetWorldPose(out pos, out rot);
+        wheelMesh.position = pos;
+        wheelMesh.rotation = rot;
+    }
 }
