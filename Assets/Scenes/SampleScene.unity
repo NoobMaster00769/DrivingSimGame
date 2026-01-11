@@ -491,19 +491,71 @@ MonoBehaviour:
     FRWheel: {fileID: 1032816034}
     RLWheel: {fileID: 79425944}
     RRWheel: {fileID: 522893052}
-  motorForce: 500
-  maxSpeed: 20
-  brakeForce: 30
-  reverseForce: 20
-  rollingResistance: 10
-  maxSteerAngle: 30
-  steerResponse: 5
-  steerReturnSpeed: 7
   FL_WheelMesh: {fileID: 929210628}
   FR_WheelMesh: {fileID: 95611794}
   RL_WheelMesh: {fileID: 1291921236}
   RR_WheelMesh: {fileID: 1291921233}
-  throttle: 0
+  maxMotorTorque: 1500
+  maxRPM: 6000
+  idleRPM: 900
+  torqueCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.0000016056001
+      value: 0.020441378
+      inSlope: 0.20792131
+      outSlope: 0.20792131
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.13611253
+    - serializedVersion: 3
+      time: 0.29968816
+      value: 0.99992955
+      inSlope: 0.67011374
+      outSlope: 0.67011374
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.60037
+      value: 0.89962995
+      inSlope: -0.07341912
+      outSlope: -0.07341912
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.8486167
+      value: 0.59952897
+      inSlope: 0.34138277
+      outSlope: 0.34138277
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1.0000008
+      value: 0.019776225
+      inSlope: -3.8296802
+      outSlope: -3.8296802
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  brakeForce: 30
+  maxSteerAngle: 30
+  steerResponse: 5
+  rearSideFriction: 1.4
+  rearHandbrakeFriction: 0.6
+  maxSpeed: 20
+  engineRPM: 0
 --- !u!114 &806114145
 MonoBehaviour:
   m_ObjectHideFlags: 0
