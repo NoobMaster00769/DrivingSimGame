@@ -15,37 +15,54 @@ public class VehicleContext : MonoBehaviour
     public Transform RL_WheelMesh;
     public Transform RR_WheelMesh;
 
+    // ---------------- ENGINE ----------------
     [Header("Engine")]
-    public float maxMotorTorque = 1500f;
-    public float maxRPM = 6000f;
+    public float maxMotorTorque = 1600f;
+    public float maxRPM = 6500f;
     public float idleRPM = 900f;
-
-    [Tooltip("X = normalized RPM (0–1), Y = torque multiplier")]
     public AnimationCurve torqueCurve;
 
-    [Header("Manual Gearbox")]
-    public float[] gearRatios = { 2.8f, 1.9f, 1.4f, 1.0f, 0.8f };
+    // ---------------- CLUTCH ----------------
+    [Header("Clutch")]
+    [Range(0f, 1f)] public float clutch; // 0 = engaged, 1 = disengaged
+    public float clutchEngageSpeed = 4f;
+
+    // ---------------- GEARBOX ----------------
+    [Header("Gearbox")]
+    public float reverseGearRatio = -3.0f;
+    public float[] forwardGearRatios = { 3.2f, 2.1f, 1.5f, 1.1f, 0.9f };
+    public float finalDriveRatio = 3.4f;
+
+    [Tooltip("-1 = Reverse, 0 = Neutral, 1+ = Forward gears")]
     public int currentGear = 0;
 
-    [Header("RPM Hints")]
+    // ---------------- RPM RULES ----------------
+    [Header("RPM Rules")]
+    public float stallRPM = 700f;
     public float optimalUpshiftRPM = 5200f;
     public float optimalDownshiftRPM = 1800f;
 
-    [Header("Brakes")]
-    public float brakeForce = 3000f;
-
+    // ---------------- STEERING ----------------
     [Header("Steering")]
     public float maxSteerAngle = 30f;
     public float steerResponse = 6f;
 
+    // ---------------- BRAKES ----------------
+    [Header("Brakes")]
+    public float brakeForce = 3000f;
+
+    // ---------------- FRICTION ----------------
     [Header("Friction")]
     public float rearSideFriction = 1.4f;
     public float rearHandbrakeFriction = 0.6f;
 
+    // ---------------- SPEED ----------------
     [Header("Speed")]
-    public float maxSpeed = 40f; // m/s
+    public float maxSpeed = 45f;
 
+    // ---------------- RUNTIME ----------------
     [HideInInspector] public float engineRPM;
+    [HideInInspector] public bool engineStalled;
 
     private void Start()
     {
