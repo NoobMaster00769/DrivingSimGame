@@ -8,6 +8,7 @@ public class DrivingState : VehicleState
     public override void FixedUpdate()
     {
         UpdateEngineRPM();
+        HandleManualGears();
         ApplyMotorTorque();
         ApplySteering();
         ApplyBrakes();
@@ -25,11 +26,35 @@ public class DrivingState : VehicleState
 
         context.engineRPM = Mathf.Lerp(
             context.engineRPM,
-            Mathf.Max(context.idleRPM, rearRPM),
-            Time.fixedDeltaTime * 5f
+            Mathf.Max(context.idleRPM, rearRPM * context.gearRatios[context.currentGear]),
+            Time.fixedDeltaTime * 6f
         );
 
-        context.engineRPM = Mathf.Clamp(context.engineRPM, context.idleRPM, context.maxRPM);
+        context.engineRPM = Mathf.Clamp(
+            context.engineRPM,
+            context.idleRPM,
+            context.maxRPM
+        );
+    }
+
+    // ---------------- MANUAL GEARBOX ----------------
+    void HandleManualGears()
+    {
+        if (context.input.ShiftUp)
+        {
+            if (context.currentGear < context.gearRatios.Length - 1)
+                context.currentGear++;
+
+            context.input.ConsumeShiftUp();
+        }
+
+        if (context.input.ShiftDown)
+        {
+            if (context.currentGear > 0)
+                context.currentGear--;
+
+            context.input.ConsumeShiftDown();
+        }
     }
 
     // ---------------- MOTOR ----------------
@@ -46,8 +71,13 @@ public class DrivingState : VehicleState
 
         float normalizedRPM = context.engineRPM / context.maxRPM;
         float torqueMultiplier = context.torqueCurve.Evaluate(normalizedRPM);
+        float gearRatio = context.gearRatios[context.currentGear];
 
-        float torque = throttle * context.maxMotorTorque * torqueMultiplier;
+        float torque =
+            throttle *
+            context.maxMotorTorque *
+            torqueMultiplier *
+            gearRatio;
 
         context.colliders.RRWheel.motorTorque = torque;
         context.colliders.RLWheel.motorTorque = torque;

@@ -23,6 +23,14 @@ public class VehicleContext : MonoBehaviour
     [Tooltip("X = normalized RPM (0–1), Y = torque multiplier")]
     public AnimationCurve torqueCurve;
 
+    [Header("Manual Gearbox")]
+    public float[] gearRatios = { 2.8f, 1.9f, 1.4f, 1.0f, 0.8f };
+    public int currentGear = 0;
+
+    [Header("RPM Hints")]
+    public float optimalUpshiftRPM = 5200f;
+    public float optimalDownshiftRPM = 1800f;
+
     [Header("Brakes")]
     public float brakeForce = 3000f;
 
