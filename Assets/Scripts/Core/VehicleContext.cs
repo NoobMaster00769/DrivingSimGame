@@ -2,6 +2,23 @@ using UnityEngine;
 
 public class VehicleContext : MonoBehaviour
 {
+    [Header("Differential (LSD)")]
+    [Range(0f, 1f)]
+    public float lsdStrength = 0.6f;
+    // 0 = open diff, 1 = fully locked
+
+    public float maxLsdBias = 3.0f;
+    // Maximum torque bias ratio
+  
+    [Header("Traction Control")]
+    public bool tractionControlEnabled = true;
+
+    [Tooltip("Allowed slip before TC kicks in")]
+    public float slipThreshold = 0.15f;
+
+    [Tooltip("How aggressively TC cuts torque")]
+    public float tcStrength = 6f;
+
     [Header("References")]
     public Rigidbody rb;
     public VehicleInputReader input;

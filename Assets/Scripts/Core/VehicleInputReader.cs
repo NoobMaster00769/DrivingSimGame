@@ -6,43 +6,55 @@ public class VehicleInputReader : MonoBehaviour
     public float Throttle { get; private set; }
     public float Steering { get; private set; }
     public float Brake { get; private set; }
+
+    // DIGITAL CLUTCH (keyboard)
     public float Clutch { get; private set; }
 
+    // One-frame shift flags
     public bool ShiftUp { get; private set; }
     public bool ShiftDown { get; private set; }
 
-    private VehicleInputActions actions;
+    private VehicleInputActions input;
 
-    private void Awake()
+    void Awake()
     {
-        actions = new VehicleInputActions();
+        input = new VehicleInputActions();
+
+        // Throttle
+        input.Driving.Throttle.performed += ctx => Throttle = ctx.ReadValue<float>();
+        input.Driving.Throttle.canceled += _ => Throttle = 0f;
+
+        // Steering
+        input.Driving.Steering.performed += ctx => Steering = ctx.ReadValue<float>();
+        input.Driving.Steering.canceled += _ => Steering = 0f;
+
+        // Brake
+        input.Driving.Brake.performed += ctx => Brake = ctx.ReadValue<float>();
+        input.Driving.Brake.canceled += _ => Brake = 0f;
+
+        // Clutch (Left Shift)
+        input.Driving.Clutch.performed += _ => Clutch = 1f;
+        input.Driving.Clutch.canceled += _ => Clutch = 0f;
+
+        // Gear shifts
+        input.Driving.ShiftUp.performed += _ => ShiftUp = true;
+        input.Driving.ShiftDown.performed += _ => ShiftDown = true;
     }
 
-    private void OnEnable()
+    void OnEnable()
     {
-        actions.Enable();
-
-        actions.Driving.Throttle.performed += c => Throttle = c.ReadValue<float>();
-        actions.Driving.Throttle.canceled += _ => Throttle = 0f;
-
-        actions.Driving.Steering.performed += c => Steering = c.ReadValue<float>();
-        actions.Driving.Steering.canceled += _ => Steering = 0f;
-
-        actions.Driving.Brake.performed += c => Brake = c.ReadValue<float>();
-        actions.Driving.Brake.canceled += _ => Brake = 0f;
-
-        actions.Driving.Clutch.performed += _ => Clutch = 1f;
-        actions.Driving.Clutch.canceled += _ => Clutch = 0f;
-
-        actions.Driving.ShiftUp.performed += _ => ShiftUp = true;
-        actions.Driving.ShiftDown.performed += _ => ShiftDown = true;
+        input.Enable();
     }
 
-    public void ConsumeShiftUp() => ShiftUp = false;
-    public void ConsumeShiftDown() => ShiftDown = false;
-
-    private void OnDisable()
+    void OnDisable()
     {
-        actions.Disable();
+        input.Disable();
+    }
+
+    // CALLED MANUALLY FROM DrivingState
+    public void ConsumeShifts()
+    {
+        ShiftUp = false;
+        ShiftDown = false;
     }
 }

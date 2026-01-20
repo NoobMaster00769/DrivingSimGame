@@ -10,80 +10,68 @@ public class DrivingState : VehicleState
         UpdateClutch();
         HandleGearShift();
         SimulateEngineRPM();
-        ApplyDriveTorque();
+        ApplyEngineForces();
+        ApplyEngineBraking();
         ApplySteering();
         ApplyBrakes();
         ApplyFriction();
         UpdateWheelVisuals();
     }
 
-    // ---------------- CLUTCH ----------------
+    // ===================== CLUTCH =====================
     void UpdateClutch()
     {
-        context.clutch = Mathf.Lerp(
-            context.clutch,
-            context.input.Clutch,
-            Time.fixedDeltaTime * context.clutchEngageSpeed
-        );
+        // DIGITAL clutch
+        context.clutch = context.input.Clutch;
     }
 
-    // ---------------- GEARS ----------------
+    // ===================== GEARS =====================
     void HandleGearShift()
     {
-        // MUST press clutch to shift
-        if (context.clutch < 0.8f)
-            return;
+        if (context.clutch < 0.85f) return;
 
         float speed = context.rb.velocity.magnitude;
 
         if (context.input.ShiftUp)
         {
-            // Reverse → Neutral
             if (context.currentGear == -1 && speed < 1f)
                 context.currentGear = 0;
-
-            // Neutral → 1st
             else if (context.currentGear == 0)
                 context.currentGear = 1;
-
-            // Forward gears
             else if (context.currentGear > 0 &&
                      context.currentGear < context.forwardGearRatios.Length)
                 context.currentGear++;
-
-            context.input.ConsumeShiftUp();
         }
 
         if (context.input.ShiftDown)
         {
-            // Forward → Neutral
             if (context.currentGear == 1)
                 context.currentGear = 0;
-
-            // Neutral → Reverse
             else if (context.currentGear == 0 && speed < 1f)
                 context.currentGear = -1;
-
-            // Forward gears
             else if (context.currentGear > 1)
             {
                 context.currentGear--;
-                RevMatch(); // 👈 real rev-matching
+                RevMatch();
             }
-
-            context.input.ConsumeShiftDown();
         }
+
+        // 🔑 IMPORTANT: consume AFTER physics uses them
+        context.input.ConsumeShifts();
     }
 
-    // ---------------- REV MATCH ----------------
+
+    // ===================== REV MATCH =====================
     void RevMatch()
     {
-        float wheelRPM =
-            (context.colliders.RRWheel.rpm + context.colliders.RLWheel.rpm) * 0.5f;
+        if (context.currentGear <= 0) return;
+
+        float wheelRPM = GetWheelRPM();
+        float ratio = Mathf.Abs(GetGearRatio());
 
         float targetRPM =
-            Mathf.Abs(wheelRPM) *
-            Mathf.Abs(GetCurrentGearRatio()) *
+            wheelRPM *
+            ratio *
             context.finalDriveRatio;
 
         context.engineRPM = Mathf.Clamp(
@@ -93,41 +81,33 @@ public class DrivingState : VehicleState
         );
     }
 
-    // ---------------- ENGINE RPM ----------------
+    // ===================== ENGINE RPM =====================
     void SimulateEngineRPM()
     {
-        float wheelRPM =
-            (context.colliders.RRWheel.rpm + context.colliders.RLWheel.rpm) * 0.5f;
+        float wheelRPM = GetWheelRPM();
+        float ratio = Mathf.Abs(GetGearRatio());
 
-        float gearRatio = GetCurrentGearRatio();
-
-        float targetRPM =
-            Mathf.Abs(wheelRPM) *
-            Mathf.Abs(gearRatio) *
-            context.finalDriveRatio;
-
-        // Neutral or clutch pressed → free rev
-        if (context.currentGear == 0 || context.clutch > 0.9f)
+        // Neutral or clutch in → free rev
+        if (context.currentGear == 0 || context.clutch > 0.95f)
         {
             context.engineRPM = Mathf.Lerp(
                 context.engineRPM,
                 context.idleRPM + context.input.Throttle * (context.maxRPM - context.idleRPM),
                 Time.fixedDeltaTime * 5f
             );
-        }
-        else
-        {
-            context.engineRPM = Mathf.Lerp(
-                context.engineRPM,
-                Mathf.Max(context.idleRPM, targetRPM),
-                (1f - context.clutch) * Time.fixedDeltaTime * 6f
-            );
+            return;
         }
 
+        float targetRPM = wheelRPM * ratio * context.finalDriveRatio;
+
+        context.engineRPM = Mathf.Lerp(
+            context.engineRPM,
+            Mathf.Max(context.idleRPM, targetRPM),
+            Time.fixedDeltaTime * 8f
+        );
+
         // Stall
-        if (context.engineRPM < context.stallRPM &&
-            context.currentGear != 0 &&
-            context.clutch < 0.2f)
+        if (context.engineRPM < context.stallRPM && context.clutch < 0.2f)
         {
             context.engineStalled = true;
             context.engineRPM = 0f;
@@ -136,28 +116,19 @@ public class DrivingState : VehicleState
         {
             context.engineStalled = false;
         }
-
-        context.engineRPM = Mathf.Clamp(context.engineRPM, 0f, context.maxRPM);
     }
 
-    // ---------------- TORQUE ----------------
-    void ApplyDriveTorque()
+    // ===================== ENGINE FORCE =====================
+    void ApplyEngineForces()
     {
         if (context.engineStalled || context.currentGear == 0)
         {
-            context.colliders.RRWheel.motorTorque = 0f;
-            context.colliders.RLWheel.motorTorque = 0f;
+            SetDriveTorque(0f);
             return;
         }
 
-        // Prevent wrong-direction torque
-        float forwardVel = Vector3.Dot(context.rb.velocity, context.transform.forward);
-        float gearRatio = GetCurrentGearRatio();
-
-        if (gearRatio < 0 && forwardVel > 0.5f) return;
-        if (gearRatio > 0 && forwardVel < -0.5f) return;
-
         float rpmNorm = context.engineRPM / context.maxRPM;
+
         float engineTorque =
             context.maxMotorTorque *
             context.torqueCurve.Evaluate(rpmNorm) *
@@ -165,36 +136,60 @@ public class DrivingState : VehicleState
 
         float driveTorque =
             engineTorque *
-            gearRatio *
+            GetGearRatio() *
             context.finalDriveRatio *
             (1f - context.clutch);
 
-        context.colliders.RRWheel.motorTorque = driveTorque;
-        context.colliders.RLWheel.motorTorque = driveTorque;
+        SetDriveTorque(driveTorque);
     }
 
-    float GetCurrentGearRatio()
+    // ===================== ENGINE BRAKING =====================
+    void ApplyEngineBraking()
     {
-        if (context.currentGear == -1)
-            return context.reverseGearRatio;
+        if (context.currentGear <= 0 || context.clutch > 0.2f) return;
 
-        if (context.currentGear > 0)
-            return context.forwardGearRatios[context.currentGear - 1];
+        float brake =
+            context.brakeForce *
+            Mathf.Abs(GetGearRatio()) *
+            (context.engineRPM / context.maxRPM) *
+            0.1f;
 
+        context.colliders.RLWheel.brakeTorque += brake;
+        context.colliders.RRWheel.brakeTorque += brake;
+    }
+
+    // ===================== HELPERS =====================
+    float GetWheelRPM()
+    {
+        return Mathf.Abs(
+            (context.colliders.RLWheel.rpm + context.colliders.RRWheel.rpm) * 0.5f
+        );
+    }
+
+    float GetGearRatio()
+    {
+        if (context.currentGear == -1) return context.reverseGearRatio;
+        if (context.currentGear > 0) return context.forwardGearRatios[context.currentGear - 1];
         return 0f;
     }
 
-    // ---------------- STEERING ----------------
+    void SetDriveTorque(float totalTorque)
+    {
+        context.colliders.RLWheel.motorTorque = totalTorque * 0.5f;
+        context.colliders.RRWheel.motorTorque = totalTorque * 0.5f;
+    }
+
+    // ===================== STEERING / BRAKES =====================
     void ApplySteering()
     {
         float speed = context.rb.velocity.magnitude;
         float target = context.input.Steering *
-                       Mathf.Lerp(context.maxSteerAngle, context.maxSteerAngle * 0.35f, speed / context.maxSpeed);
+            Mathf.Lerp(context.maxSteerAngle,
+                       context.maxSteerAngle * 0.35f,
+                       speed / context.maxSpeed);
 
-        context.colliders.FLWheel.steerAngle =
-            Mathf.Lerp(context.colliders.FLWheel.steerAngle, target, Time.fixedDeltaTime * context.steerResponse);
-
-        context.colliders.FRWheel.steerAngle = context.colliders.FLWheel.steerAngle;
+        context.colliders.FLWheel.steerAngle = target;
+        context.colliders.FRWheel.steerAngle = target;
     }
 
     void ApplyBrakes()

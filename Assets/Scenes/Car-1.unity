@@ -563,6 +563,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36c9f1b220ba8f4438ddb07232dd38f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lsdStrength: 0.6
+  maxLsdBias: 3
+  tractionControlEnabled: 1
+  slipThreshold: 0.15
+  tcStrength: 6
   rb: {fileID: 806114142}
   input: {fileID: 806114143}
   colliders:
@@ -574,7 +579,7 @@ MonoBehaviour:
   FR_WheelMesh: {fileID: 95611794}
   RL_WheelMesh: {fileID: 1291921236}
   RR_WheelMesh: {fileID: 1291921233}
-  maxMotorTorque: 1500
+  maxMotorTorque: 1100
   maxRPM: 6000
   idleRPM: 900
   torqueCurve:
@@ -582,7 +587,7 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: -0.0000016056001
-      value: 0.020441378
+      value: 0.000086152926
       inSlope: 0.20792131
       outSlope: 0.20792131
       tangentMode: 0
@@ -590,7 +595,16 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0.13611253
     - serializedVersion: 3
-      time: 0.29968816
+      time: 0.14974312
+      value: 0.6504329
+      inSlope: 4.7783985
+      outSlope: 4.7783985
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.3496912
       value: 0.99992955
       inSlope: 0.67011374
       outSlope: 0.67011374
@@ -599,8 +613,8 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.60037
-      value: 0.89962995
+      time: 0.55036694
+      value: 0.9505638
       inSlope: -0.07341912
       outSlope: -0.07341912
       tangentMode: 0
@@ -608,8 +622,8 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.8486167
-      value: 0.59952897
+      time: 0.7486106
+      value: 0.8000905
       inSlope: 0.34138277
       outSlope: 0.34138277
       tangentMode: 0
@@ -617,10 +631,19 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
+      time: 0.90008825
+      value: 0.60061884
+      inSlope: -4.014039
+      outSlope: -4.014039
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
       time: 1.0000008
-      value: 0.019776225
-      inSlope: -3.8296802
-      outSlope: -3.8296802
+      value: 0.00097344257
+      inSlope: -6.0017004
+      outSlope: -6.0017004
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -630,14 +653,14 @@ MonoBehaviour:
     m_RotationOrder: 4
   clutch: 0
   clutchEngageSpeed: 4
-  reverseGearRatio: -3
+  reverseGearRatio: -3.6
   forwardGearRatios:
-  - 3.2
-  - 2.1
-  - 1.5
-  - 1.1
-  - 0.9
-  finalDriveRatio: 3.4
+  - 4.1
+  - 2.3
+  - 1.55
+  - 1.15
+  - 0.88
+  finalDriveRatio: 4.1
   currentGear: 0
   stallRPM: 700
   optimalUpshiftRPM: 5200
