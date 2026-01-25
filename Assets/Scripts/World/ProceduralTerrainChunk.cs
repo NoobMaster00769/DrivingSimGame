@@ -15,27 +15,29 @@ public class ProceduralTerrain : MonoBehaviour
     public float vertexSpacing = 1f;
 
     [Header("Noise Layers (CALM)")]
-    public float landmassScale = 0.015f;   // very large shapes
+    public float landmassScale = 0.015f;   // large shapes
     public float landmassAmp = 18f;
 
-    public float hillScale = 0.05f;         // rolling hills
+    public float hillScale = 0.05f;        // rolling hills
     public float hillAmp = 6f;
 
-    public float detailScale = 0.15f;       // subtle bumps
+    public float detailScale = 0.15f;      // subtle bumps
     public float detailAmp = 1.2f;
 
     [Header("Height Shaping")]
     [Range(0.2f, 1.5f)]
-    public float heightCurvePower = 0.65f; // < 1 flattens valleys
+    public float heightCurvePower = 0.65f;
+
+    [Header("Road Blending")]
+    public RoadSplineGenerator roadSpline;
+    public float roadBlendRadius = 10f;     // how wide terrain reacts
+    public float roadBlendStrength = 0.6f;  // how deep it blends
 
     [Header("Color")]
     public Gradient gradient;
 
     float minTerrainHeight;
     float maxTerrainHeight;
-
-    [Header("Slope Control")]
-    public float maxHeightDelta = 1.5f;
 
     void Start()
     {
@@ -67,12 +69,41 @@ public class ProceduralTerrain : MonoBehaviour
             {
                 float height = GetNoiseSample(x, z);
 
-                if (x > 0)
+                // --- ROAD INFLUENCE ---
+                if (roadSpline != null && roadSpline.points.Count > 0)
                 {
-                    float leftHeight = vertices[(z * (xSize + 1)) + (x - 1)].y;
-                    height = Mathf.Lerp(leftHeight, height, 0.5f);
-                }
+                    Vector2 terrainPos = new Vector2(
+                        x * vertexSpacing,
+                        z * vertexSpacing
+                    );
 
+                    float closestDist = float.MaxValue;
+
+                    foreach (Vector3 rp in roadSpline.points)
+                    {
+                        Vector3 localRoadPoint =
+                            transform.InverseTransformPoint(rp);
+
+                        float d = Vector2.Distance(
+                            terrainPos,
+                            new Vector2(localRoadPoint.x, localRoadPoint.z)
+                        );
+
+                        if (d < closestDist)
+                            closestDist = d;
+                    }
+
+                    if (closestDist < roadBlendRadius)
+                    {
+                        float t = 1f - Mathf.SmoothStep(
+                            0f,
+                            roadBlendRadius,
+                            closestDist
+                        );
+
+                        height -= t * roadBlendStrength * landmassAmp;
+                    }
+                }
 
                 vertices[i] = new Vector3(
                     x * vertexSpacing,
@@ -90,13 +121,12 @@ public class ProceduralTerrain : MonoBehaviour
         colors = new Color[vertices.Length];
         for (i = 0; i < vertices.Length; i++)
         {
-            float normalizedHeight = Mathf.InverseLerp(
+            float h = Mathf.InverseLerp(
                 minTerrainHeight,
                 maxTerrainHeight,
                 vertices[i].y
             );
-
-            colors[i] = gradient.Evaluate(normalizedHeight);
+            colors[i] = gradient.Evaluate(h);
         }
     }
 
@@ -157,16 +187,12 @@ public class ProceduralTerrain : MonoBehaviour
 
         float rawHeight = landmass + hills + detail;
 
-        // --- Normalize ---
         float maxPossible = landmassAmp + hillAmp + detailAmp;
         float normalized = Mathf.Clamp01(rawHeight / maxPossible);
 
-        // --- VALLEY BIAS ---
-        // < 1 flattens valleys, keeps peaks rare
+        // Flattens valleys, keeps peaks rare → calm driving
         normalized = Mathf.Pow(normalized, heightCurvePower);
 
-        // --- Final height ---
         return normalized * landmassAmp;
     }
-
 }
