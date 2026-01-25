@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: 74164799bb7f11a49a7455fd472a1f67, type: 2}
   m_HaloStrength: 0.5
@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 2127979727}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -184,9 +184,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Vehicle
       objectReference: {fileID: 0}
+    - target: {fileID: 6678307814923809374, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 12.7
       objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.y
@@ -229,6 +233,59 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
+--- !u!1 &1979657905
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1979657907}
+  - component: {fileID: 1979657906}
+  m_Layer: 0
+  m_Name: RoadPath
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1979657906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1979657905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62a29cdc90fa707409d78baf061e5cbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrain: {fileID: 2104832904}
+  segmentCount: 200
+  segmentLength: 6
+  turnStrength: 0.4
+  valleyBias: 0.6
+  valleySampleOffset: 4
+  roadHeightOffset: 0.15
+  drawGizmos: 1
+  roadPoints: []
+--- !u!4 &1979657907
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1979657905}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 17.711546, y: 7.6766167, z: 18.091263}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2087329283
 GameObject:
   m_ObjectHideFlags: 0
@@ -316,7 +373,7 @@ Transform:
   m_GameObject: {fileID: 2087329283}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.97, z: -10}
+  m_LocalPosition: {x: 0, y: 15.8, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -467,7 +524,7 @@ Transform:
   m_GameObject: {fileID: 2104832899}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -3.75, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -485,13 +542,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed49fafe26ef5904bb34b1d5cfb88e25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 100
-  length: 100
-  scale: 20
-  heightMultiplier: 10
-  noiseScale: 0.1
-  noiseOffset: {x: 0, y: 0}
-  terrainMaterial: {fileID: 0}
+  xSize: 200
+  zSize: 200
+  vertexSpacing: 1
+  landmassScale: 0.015
+  landmassAmp: 18
+  hillScale: 0.05
+  hillAmp: 6
+  detailScale: 0.15
+  detailAmp: 1.2
+  heightCurvePower: 0.65
+  gradient:
+    serializedVersion: 2
+    key0: {r: 0.18431373, g: 0.24313726, b: 0.22745098, a: 1}
+    key1: {r: 0.30588236, g: 0.37254903, b: 0.29411766, a: 1}
+    key2: {r: 0.48235294, g: 0.41568628, b: 0.2901961, a: 0}
+    key3: {r: 0.6117647, g: 0.4862745, b: 0.35686275, a: 0}
+    key4: {r: 0.7882353, g: 0.6901961, b: 0.54901963, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 16384
+    ctime2: 32768
+    ctime3: 49151
+    ctime4: 65535
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 5
+    m_NumAlphaKeys: 2
+  maxHeightDelta: 1.5
 --- !u!1 &2127979726
 GameObject:
   m_ObjectHideFlags: 0
@@ -521,7 +612,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -619,3 +710,4 @@ SceneRoots:
   - {fileID: 632673157}
   - {fileID: 1748035233}
   - {fileID: 2104832903}
+  - {fileID: 1979657907}
