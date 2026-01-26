@@ -173,6 +173,8 @@ MonoBehaviour:
   night: {fileID: 11400000, guid: d6b71c674d2d773429e3ed81a496820c, type: 2}
   time: 0
   skyboxRuntime: {fileID: 2100000, guid: 74164799bb7f11a49a7455fd472a1f67, type: 2}
+  fixedAmbientColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
+  ambientIntensity: 1
 --- !u!114 &632673159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,7 +303,7 @@ MonoBehaviour:
   segmentLength: 6
   maxTurnPerStep: 2.5
   curvatureScale: 0.005
-  roadHeightOffset: 0.2
+  roadHeightOffset: 0.05
   points: []
 --- !u!114 &1979657909
 MonoBehaviour:
@@ -658,7 +660,7 @@ MonoBehaviour:
   detailScale: 0.15
   detailAmp: 1.2
   heightCurvePower: 0.65
-  roadSpline: {fileID: 0}
+  roadSpline: {fileID: 1979657908}
   roadBlendRadius: 10
   roadBlendStrength: 0.6
   gradient:

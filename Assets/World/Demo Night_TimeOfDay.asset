@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skybox: {fileID: 2100000, guid: cc421da483ed06c49933077a621bff25, type: 2}
   skyExposure: 1
-  fogEnabled: 1
-  fogColor: {r: 0.509434, g: 0.27394086, b: 0.42878562, a: 1}
-  fogDensity: 0.04
-  ambientColor: {r: 0.26099145, g: 0.3909755, b: 0.6509434, a: 1}
   sunColor: {r: 0.26379493, g: 0.40115762, b: 0.9811321, a: 1}
   sunIntensity: 1.2
+  fogEnabled: 0
+  fogColor: {r: 0, g: 0, b: 0, a: 0}
+  fogDensity: 0
+  ambientColor: {r: 1, g: 1, b: 1, a: 1}

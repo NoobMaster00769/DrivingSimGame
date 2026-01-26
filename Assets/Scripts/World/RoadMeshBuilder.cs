@@ -11,7 +11,7 @@ public class RoadMeshBuilder : MonoBehaviour
 
     [Header("Road Shape")]
     public float roadWidth = 6f;
-    public float roadYOffset = 0.05f;
+    public float roadYOffset = 0.15f;
 
     [Header("Banking")]
     public float maxBankAngle = 8f;

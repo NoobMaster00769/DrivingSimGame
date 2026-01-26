@@ -31,7 +31,7 @@ public class ProceduralTerrain : MonoBehaviour
     [Header("Road Blending")]
     public RoadSplineGenerator roadSpline;
     public float roadBlendRadius = 10f;     // how wide terrain reacts
-    public float roadBlendStrength = 0.6f;  // how deep it blends
+    public float roadBlendStrength = 0.6f;  // how strong it flattens
 
     [Header("Color")]
     public Gradient gradient;
@@ -46,6 +46,10 @@ public class ProceduralTerrain : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
 
         Generate();
+
+        // 🔁 Force rebuild after road exists
+        if (roadSpline != null)
+            Invoke(nameof(Generate), 0.05f);
     }
 
     void Generate()
@@ -69,7 +73,7 @@ public class ProceduralTerrain : MonoBehaviour
             {
                 float height = GetNoiseSample(x, z);
 
-                // --- ROAD INFLUENCE ---
+                // --- ROAD INFLUENCE (FIXED + SAFE) ---
                 if (roadSpline != null && roadSpline.points.Count > 0)
                 {
                     Vector2 terrainPos = new Vector2(
@@ -78,6 +82,7 @@ public class ProceduralTerrain : MonoBehaviour
                     );
 
                     float closestDist = float.MaxValue;
+                    float roadLocalY = height;
 
                     foreach (Vector3 rp in roadSpline.points)
                     {
@@ -90,7 +95,10 @@ public class ProceduralTerrain : MonoBehaviour
                         );
 
                         if (d < closestDist)
+                        {
                             closestDist = d;
+                            roadLocalY = localRoadPoint.y;
+                        }
                     }
 
                     if (closestDist < roadBlendRadius)
@@ -101,9 +109,11 @@ public class ProceduralTerrain : MonoBehaviour
                             closestDist
                         );
 
-                        height -= t * roadBlendStrength * landmassAmp;
+                        // ✅ Blend UP toward road, never carve below it
+                        height = Mathf.Lerp(height, roadLocalY, t * roadBlendStrength);
                     }
                 }
+
 
                 vertices[i] = new Vector3(
                     x * vertexSpacing,
@@ -190,7 +200,6 @@ public class ProceduralTerrain : MonoBehaviour
         float maxPossible = landmassAmp + hillAmp + detailAmp;
         float normalized = Mathf.Clamp01(rawHeight / maxPossible);
 
-        // Flattens valleys, keeps peaks rare → calm driving
         normalized = Mathf.Pow(normalized, heightCurvePower);
 
         return normalized * landmassAmp;

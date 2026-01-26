@@ -11,11 +11,11 @@ public class RoadSplineGenerator : MonoBehaviour
     public float segmentLength = 5f;
 
     [Header("Curvature")]
-    public float maxTurnPerStep = 2.5f;     // degrees
-    public float curvatureScale = 0.005f;   // LOWER = longer bends
+    public float maxTurnPerStep = 2.5f;
+    public float curvatureScale = 0.005f;
 
     [Header("Height")]
-    public float roadHeightOffset = 0.1f;
+    public float roadHeightOffset = 0.05f;
 
     public List<Vector3> points = new();
 
@@ -39,15 +39,14 @@ public class RoadSplineGenerator : MonoBehaviour
 
         for (int i = 0; i < pointCount; i++)
         {
+            // ✅ SAMPLE TERRAIN HEIGHT ONCE
             float terrainHeight = SampleTerrainHeight(pos);
             pos.y = terrainHeight + roadHeightOffset;
 
             points.Add(pos);
 
-            // ---- LONG CURVATURE ----
             float noise = Mathf.PerlinNoise(i * curvatureScale, 0f);
             float turn = Mathf.Lerp(-maxTurnPerStep, maxTurnPerStep, noise);
-
             heading += turn;
 
             Vector3 dir = Quaternion.Euler(0f, heading, 0f) * Vector3.forward;
@@ -60,8 +59,6 @@ public class RoadSplineGenerator : MonoBehaviour
 
     float SampleTerrainHeight(Vector3 worldPos)
     {
-        if (terrain == null) return worldPos.y;
-
         Mesh m = terrain.GetComponent<MeshFilter>().sharedMesh;
         if (m == null) return worldPos.y;
 

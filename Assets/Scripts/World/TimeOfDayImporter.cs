@@ -1,46 +1,52 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
-using UnityEngine.Rendering;
 
 public class TimeOfDayImporter
 {
     [MenuItem("World/Import Time Of Day From Scene")]
     static void Import()
     {
-        var sun = Object.FindObjectOfType<Light>();
-        if (sun == null)
+        Light sun = Object.FindObjectOfType<Light>();
+        if (sun == null || sun.type != LightType.Directional)
         {
             Debug.LogError("No Directional Light found in scene.");
             return;
         }
 
-        var asset = ScriptableObject.CreateInstance<TimeOfDay>();
+        TimeOfDay asset = ScriptableObject.CreateInstance<TimeOfDay>();
 
-        // SKY
+        // -------- SKYBOX --------
         asset.skybox = RenderSettings.skybox;
-        asset.skyExposure = RenderSettings.skybox.HasProperty("_Exposure")
-            ? RenderSettings.skybox.GetFloat("_Exposure")
-            : 1f;
 
-        // FOG
-        asset.fogEnabled = RenderSettings.fog;
-        asset.fogColor = RenderSettings.fogColor;
-        asset.fogDensity = RenderSettings.fogDensity;
+        if (RenderSettings.skybox != null &&
+            RenderSettings.skybox.HasProperty("_Exposure"))
+        {
+            asset.skyExposure = RenderSettings.skybox.GetFloat("_Exposure");
+        }
+        else
+        {
+            asset.skyExposure = 1f;
+        }
 
-        // AMBIENT
-        asset.ambientColor = RenderSettings.ambientLight;
-
-        // SUN
+        // -------- SUN --------
         asset.sunColor = sun.color;
         asset.sunIntensity = sun.intensity;
 
-        // SAVE
-        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        // -------- HARD RESET (NO TINT DATA) --------
+        asset.fogEnabled = false;
+        asset.fogColor = Color.clear;
+        asset.fogDensity = 0f;
+
+        asset.ambientColor = Color.white; // UNUSED but neutral
+
+        string sceneName = UnityEngine.SceneManagement.SceneManager
+            .GetActiveScene().name;
+
         string path = $"Assets/World/{sceneName}_TimeOfDay.asset";
 
         AssetDatabase.CreateAsset(asset, path);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"TimeOfDay imported from scene: {sceneName}");
+        Debug.Log($"[TimeOfDayImporter] Imported SAFE preset from {sceneName}");
     }
 }
