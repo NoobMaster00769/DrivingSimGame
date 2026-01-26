@@ -3,10 +3,7 @@ using System.Collections.Generic;
 
 public class RoadSplineGenerator : MonoBehaviour
 {
-    [Header("References")]
-    public ProceduralTerrain terrain;
-
-    [Header("Road Length")]
+    [Header("Road Shape")]
     public int pointCount = 300;
     public float segmentLength = 5f;
 
@@ -14,76 +11,59 @@ public class RoadSplineGenerator : MonoBehaviour
     public float maxTurnPerStep = 2.5f;
     public float curvatureScale = 0.005f;
 
-    [Header("Height")]
-    public float roadHeightOffset = 0.05f;
+    [Header("Height Profile")]
+    public float baseHeight = 2.5f;          // absolute world height
+    public float heightNoiseScale = 0.002f;  // vertical undulation
+    public float heightAmplitude = 1.5f;     // slope strength
+
+    [Header("Debug")]
+    public bool regenerateOnPlay = true;
 
     public List<Vector3> points = new();
 
     void Start()
     {
-        Generate();
+        if (regenerateOnPlay)
+            Generate();
     }
 
     public void Generate()
     {
         points.Clear();
 
-        Vector3 pos = terrain.transform.position +
-            new Vector3(
-                terrain.xSize * terrain.vertexSpacing * 0.5f,
-                0f,
-                terrain.vertexSpacing
-            );
-
-        float heading = 0f;
+        Vector3 pos = transform.position;
+        float heading = transform.eulerAngles.y;
 
         for (int i = 0; i < pointCount; i++)
         {
-            // ✅ SAMPLE TERRAIN HEIGHT ONCE
-            float terrainHeight = SampleTerrainHeight(pos);
-            pos.y = terrainHeight + roadHeightOffset;
+            // --- HEIGHT IS ROAD-CONTROLLED ---
+            float heightNoise =
+                Mathf.PerlinNoise(i * heightNoiseScale, 0f) - 0.5f;
+
+            pos.y = baseHeight + heightNoise * heightAmplitude;
 
             points.Add(pos);
 
-            float noise = Mathf.PerlinNoise(i * curvatureScale, 0f);
-            float turn = Mathf.Lerp(-maxTurnPerStep, maxTurnPerStep, noise);
+            // --- CURVATURE ---
+            float curveNoise = Mathf.PerlinNoise(i * curvatureScale, 10f);
+            float turn = Mathf.Lerp(-maxTurnPerStep, maxTurnPerStep, curveNoise);
             heading += turn;
 
             Vector3 dir = Quaternion.Euler(0f, heading, 0f) * Vector3.forward;
             pos += dir.normalized * segmentLength;
-
-            if (!IsInsideTerrain(pos))
-                break;
         }
     }
 
-    float SampleTerrainHeight(Vector3 worldPos)
+#if UNITY_EDITOR
+    void OnDrawGizmos()
     {
-        Mesh m = terrain.GetComponent<MeshFilter>().sharedMesh;
-        if (m == null) return worldPos.y;
+        if (points == null || points.Count < 2) return;
 
-        Vector3 local = terrain.transform.InverseTransformPoint(worldPos);
-
-        int x = Mathf.RoundToInt(local.x / terrain.vertexSpacing);
-        int z = Mathf.RoundToInt(local.z / terrain.vertexSpacing);
-
-        x = Mathf.Clamp(x, 0, terrain.xSize);
-        z = Mathf.Clamp(z, 0, terrain.zSize);
-
-        int idx = z * (terrain.xSize + 1) + x;
-        idx = Mathf.Clamp(idx, 0, m.vertexCount - 1);
-
-        return terrain.transform.TransformPoint(m.vertices[idx]).y;
+        Gizmos.color = Color.yellow;
+        for (int i = 1; i < points.Count; i++)
+        {
+            Gizmos.DrawLine(points[i - 1], points[i]);
+        }
     }
-
-    bool IsInsideTerrain(Vector3 worldPos)
-    {
-        Vector3 l = terrain.transform.InverseTransformPoint(worldPos);
-
-        return
-            l.x >= 2 &&
-            l.z >= 2 &&
-            l.x <= terrain.xSize * terrain.vertexSpacing - 2 &&
-            l.z <= terrain.zSize * terrain.vertexSpacing - 2;
-    }
+#endif
 }
