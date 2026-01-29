@@ -224,4 +224,9 @@ public class DrivingState : VehicleState
         mesh.position = p;
         mesh.rotation = r;
     }
+    public float GetNormalizedSpeed()
+    {
+        return Mathf.Clamp01(context.rb.velocity.magnitude / context.maxSpeed);
+    }
+
 }
