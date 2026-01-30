@@ -6,12 +6,11 @@ public class RoadState : MonoBehaviour
 
     [Range(0, 1)] public float agitation;
 
-    public float riseSpeed = 0.15f;
-    public float fallSpeed = 0.35f;
+    [Header("Rates")]
+    public float riseSpeed = 0.2f;
+    public float fallSpeed = 0.4f;
 
-    [Range(0, 1)] public float noHelpThreshold = 0.75f;
-
-    // OUTPUTS
+    [Header("Outputs")]
     [Range(0, 1)] public float curvature;
     [Range(0, 1)] public float width;
     [Range(0, 1)] public float banking;
@@ -26,8 +25,13 @@ public class RoadState : MonoBehaviour
 
     void UpdateAgitation()
     {
-        if (player.aggression > 0.3f)
-            agitation += player.aggression * riseSpeed * Time.deltaTime;
+        float stress =
+            player.aggression +
+            player.engineStress * 0.8f +
+            player.gearMistake * 0.6f;
+
+        if (stress > 0.4f)
+            agitation += stress * riseSpeed * Time.deltaTime;
         else
             agitation -= fallSpeed * Time.deltaTime;
 
@@ -36,18 +40,31 @@ public class RoadState : MonoBehaviour
 
     void UpdateRoadIntent()
     {
-        float help =
-            agitation < noHelpThreshold
-            ? 1f - agitation / noHelpThreshold
-            : 0f;
+        // FLOW comes from mechanical harmony
+        float harmony =
+            player.smoothness *
+            (1f - player.engineStress) *
+            (1f - player.gearMistake);
 
-        // Calm → flowing | Aggressive → tight
-        curvature = Mathf.Lerp(0.2f, 1.0f, agitation);
+        // CURVATURE
+        curvature = Mathf.Lerp(
+            0.25f,   // calm flow
+            0.9f,    // tight turns
+            agitation
+        );
 
-        // Calm → wide | Aggressive → narrow
-        width = Mathf.Lerp(1.0f, 0.4f, agitation * help);
+        // WIDTH
+        width = Mathf.Lerp(
+            1.0f,    // wide
+            0.5f,    // narrow
+            player.gearMistake
+        );
 
-        // Calm → bank helps | Aggressive → flat
-        banking = Mathf.Lerp(1.0f, 0.3f, agitation * help);
+        // BANKING
+        banking = Mathf.Lerp(
+            0.9f * harmony, // only helps when calm
+            0.2f,
+            agitation
+        );
     }
 }

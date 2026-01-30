@@ -1,9 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 public class TerrainSpawner : MonoBehaviour
 {
     public TerrainChunk terrainPrefab;
+    public Transform roadReference; // ADD THIS
 
     public int tilesPerSide = 2;
     public float tileSize = 20f;
@@ -27,6 +28,9 @@ public class TerrainSpawner : MonoBehaviour
 
             TerrainChunk t =
                 Instantiate(terrainPrefab, pos, Quaternion.identity, transform);
+
+            // 🔹 PASS ROAD REFERENCE
+            t.roadCenter = roadReference;
 
             spawned.Add(t);
         }
