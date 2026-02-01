@@ -3,48 +3,50 @@ using System.Collections.Generic;
 
 public class RoadSpawner : MonoBehaviour
 {
+    [Header("STATE (INPUT)")]
     public RoadState roadState;
 
-    [Header("References")]
+    [Header("REFERENCES")]
     public Transform car;
     public RoadSegment roadPrefab;
 
-    [Header("Generation")]
-    public int segmentsAhead = 8;
-    public float spawnAheadDistance = 50f;
-    public float despawnBehindDistance = 40f;
+    [Header("GENERATION")]
+    public int segmentsAhead = 10;
+    public float spawnAheadDistance = 70f;
+    public float despawnBehindDistance = 60f;
 
-    [Header("Curvature – Limits")]
+    [Header("CURVATURE")]
     public float maxTurnAngle = 14f;
 
-    [Header("FLOW (always on)")]
+    [Header("FLOW (always active)")]
     public float flowStrength = 0.4f;
     public float flowFrequency = 0.08f;
 
     [Header("AGGRESSION RESPONSE")]
     public float aggressionTurnBoost = 1.2f;
 
-    [Header("MEMORY / INTENT")]
+    [Header("INTENT MEMORY")]
     public float intentChangeChance = 0.15f;
     public int minIntentDuration = 4;
     public int maxIntentDuration = 10;
 
-    [Header("Smoothing")]
-    public float turnSmoothSpeed = 0.35f;
-    public float bankSmoothSpeed = 0.25f;
-    public float widthSmoothSpeed = 0.3f;
-
-    [Header("Width")]
+    [Header("WIDTH")]
     public float baseWidth = 6f;
     public float maxWidthVariation = 1.5f;
 
-    [Header("Banking")]
+    [Header("BANKING")]
     public float maxBankAngle = 8f;
+
+    [Header("SMOOTHING")]
+    public float turnSmoothSpeed = 0.35f;
+    public float widthSmoothSpeed = 0.3f;
+    public float bankSmoothSpeed = 0.25f;
+
+    // ===================== INTERNAL STATE =====================
 
     Queue<RoadSegment> spawned = new();
     RoadSegment lastSegment;
 
-    // --- STATE ---
     float currentHeading;
     float currentTurn;
     float currentTurnTarget;
@@ -55,14 +57,16 @@ public class RoadSpawner : MonoBehaviour
     float currentBank;
     float bankTarget;
 
-    // Intent memory
     int intentTimer;
-    float intentDirection; // -1 = left, +1 = right
+    float intentDirection;
 
     float flowTime;
 
+    // ===================== LIFECYCLE =====================
+
     void Start()
     {
+        ResetState();
         SpawnInitial();
     }
 
@@ -74,34 +78,14 @@ public class RoadSpawner : MonoBehaviour
         HandleDespawning();
     }
 
-    // ===================== SPAWNING =====================
-    void HandleSpawning()
+    // ===================== RESET =====================
+
+    void ResetState()
     {
-        Vector3 toEnd = lastSegment.End.position - car.position;
-        float forwardDistance = Vector3.Dot(car.forward, toEnd);
+        foreach (var seg in spawned)
+            if (seg) Destroy(seg.gameObject);
 
-        if (forwardDistance < spawnAheadDistance)
-            SpawnNext();
-    }
-
-    void HandleDespawning()
-    {
-        if (spawned.Count == 0) return;
-
-        RoadSegment first = spawned.Peek();
-
-        float behindDistance =
-            Vector3.Dot(first.End.forward, car.position - first.End.position);
-
-        if (behindDistance > despawnBehindDistance)
-            Destroy(spawned.Dequeue().gameObject);
-    }
-
-    // ===================== INITIAL =====================
-    void SpawnInitial()
-    {
-        lastSegment = Instantiate(roadPrefab, Vector3.zero, Quaternion.identity);
-        spawned.Enqueue(lastSegment);
+        spawned.Clear();
 
         currentHeading = 0f;
         currentTurn = 0f;
@@ -116,23 +100,61 @@ public class RoadSpawner : MonoBehaviour
         intentTimer = 0;
         intentDirection = Random.value < 0.5f ? -1f : 1f;
 
+        flowTime = Random.value * 100f;
+        lastSegment = null;
+    }
+
+    // ===================== SPAWNING =====================
+
+    void HandleSpawning()
+    {
+        float forwardDist =
+            Vector3.Distance(car.position, lastSegment.End.position);
+
+        if (forwardDist < spawnAheadDistance)
+            SpawnNext();
+    }
+
+    void HandleDespawning()
+    {
+        if (spawned.Count == 0) return;
+
+        RoadSegment first = spawned.Peek();
+
+        float behindDist =
+            Vector3.Distance(car.position, first.End.position);
+
+        if (behindDist > despawnBehindDistance)
+            Destroy(spawned.Dequeue().gameObject);
+    }
+
+    void SpawnInitial()
+    {
+        lastSegment = Instantiate(roadPrefab, Vector3.zero, Quaternion.identity);
+
+        // snap initial segment to terrain
+        SnapSegmentToTerrain(lastSegment);
+
+        spawned.Enqueue(lastSegment);
+
         for (int i = 0; i < segmentsAhead; i++)
             SpawnNext();
     }
 
     // ===================== CORE LOGIC =====================
+
     void SpawnNext()
     {
         RoadSegment next = Instantiate(roadPrefab);
 
-        // ---------- FLOW COMPONENT ----------
+        // ---------- FLOW ----------
         flowTime += flowFrequency;
         float flow =
             (Mathf.PerlinNoise(flowTime, 0f) - 0.5f) *
             maxTurnAngle *
             flowStrength;
 
-        // ---------- MEMORY / INTENT ----------
+        // ---------- INTENT ----------
         intentTimer--;
         if (intentTimer <= 0 && Random.value < intentChangeChance)
         {
@@ -145,7 +167,7 @@ public class RoadSpawner : MonoBehaviour
             Mathf.Lerp(0.3f, 1f, roadState ? roadState.curvature : 0.3f) *
             maxTurnAngle;
 
-        // ---------- AGGRESSION RESPONSE ----------
+        // ---------- AGGRESSION ----------
         float aggressionCurve = 0f;
         if (roadState)
         {
@@ -156,23 +178,20 @@ public class RoadSpawner : MonoBehaviour
                 0.6f;
         }
 
-        // ---------- FINAL TURN TARGET ----------
+        // ---------- FINAL TURN ----------
         currentTurnTarget =
-            flow +
-            intentCurve +
-            aggressionCurve;
+            Mathf.Clamp(
+                flow + intentCurve + aggressionCurve,
+                -maxTurnAngle,
+                maxTurnAngle
+            );
 
-        currentTurnTarget = Mathf.Clamp(
-            currentTurnTarget,
-            -maxTurnAngle,
-            maxTurnAngle
-        );
-
-        currentTurn = Mathf.Lerp(
-            currentTurn,
-            currentTurnTarget,
-            turnSmoothSpeed
-        );
+        currentTurn =
+            Mathf.Lerp(
+                currentTurn,
+                currentTurnTarget,
+                turnSmoothSpeed
+            );
 
         currentHeading += currentTurn;
 
@@ -185,32 +204,45 @@ public class RoadSpawner : MonoBehaviour
                 Mathf.Lerp(1f, 0.4f, roadState ? roadState.curvature : 0f);
         }
 
-        currentWidth = Mathf.Lerp(
-            currentWidth,
-            widthTarget,
-            widthSmoothSpeed
-        );
+        currentWidth =
+            Mathf.Lerp(
+                currentWidth,
+                widthTarget,
+                widthSmoothSpeed
+            );
 
-        // ---------- BANKING ----------
+        // ---------- BANK ----------
         bankTarget =
-            -currentTurn * 0.6f;
+            Mathf.Clamp(
+                -currentTurn * 0.6f,
+                -maxBankAngle,
+                maxBankAngle
+            );
 
-        currentBank = Mathf.Lerp(
-            currentBank,
-            bankTarget,
-            bankSmoothSpeed
-        );
+        currentBank =
+            Mathf.Lerp(
+                currentBank,
+                bankTarget,
+                bankSmoothSpeed
+            );
 
-        // ---------- APPLY TRANSFORM ----------
+        // ===================== APPLY TRANSFORM =====================
+
+        // yaw + bank (bank is roll, safe)
         next.transform.rotation =
-            Quaternion.Euler(currentBank, currentHeading, 0f);
+            Quaternion.Euler(0f, currentHeading, currentBank);
 
+        // perfect XZ stitching
         Vector3 offset =
-            lastSegment.End.position -
-            next.Start.position;
+            lastSegment.End.position - next.Start.position;
 
+        offset.y = 0f;
         next.transform.position += offset;
 
+        // snap height AFTER stitching
+        SnapSegmentToTerrain(next);
+
+        // width
         next.transform.localScale = new Vector3(
             currentWidth / baseWidth,
             1f,
@@ -219,12 +251,22 @@ public class RoadSpawner : MonoBehaviour
 
         spawned.Enqueue(next);
         lastSegment = next;
+    }
 
-        // ---------- DEBUG ----------
-        Debug.Log(
-            $"[Road] flow={flow:F1} intent={intentCurve:F1} " +
-            $"aggr={aggressionCurve:F1} turn={currentTurn:F1} " +
-            $"width={currentWidth:F2}"
-        );
+    // ===================== TERRAIN SAMPLING =====================
+
+    void SnapSegmentToTerrain(RoadSegment seg)
+    {
+        Vector3 p = seg.transform.position;
+        p.y = SampleTerrainHeight(p);
+        seg.transform.position = p;
+    }
+
+    float SampleTerrainHeight(Vector3 worldPos)
+    {
+        Terrain t = Terrain.activeTerrain;
+        if (!t) return worldPos.y;
+
+        return t.SampleHeight(worldPos) + t.transform.position.y;
     }
 }

@@ -3,36 +3,90 @@ using System.Collections.Generic;
 
 public class TerrainSpawner : MonoBehaviour
 {
-    public TerrainChunk terrainPrefab;
-    public Transform roadReference; // ADD THIS
+    [Header("References")]
+    public Transform car;
+    public Terrain terrainPrefab;
 
-    public int tilesPerSide = 2;
-    public float tileSize = 20f;
+    [Header("Grid")]
+    public int tilesAhead = 3;
+    public int tilesSide = 1;
+    public float tileSize = 500f;
 
-    List<TerrainChunk> spawned = new();
+    Dictionary<Vector2Int, Terrain> spawned = new();
+    Vector2Int currentTile;
 
-    void Start()
+    void Update()
     {
-        Spawn();
+        if (!car) return;
+
+        currentTile = new Vector2Int(
+            Mathf.FloorToInt(car.position.x / tileSize),
+            Mathf.FloorToInt(car.position.z / tileSize)
+        );
+
+        UpdateTiles();
     }
 
-    void Spawn()
+    void UpdateTiles()
     {
-        for (int x = -tilesPerSide; x <= tilesPerSide; x++)
+        for (int z = 0; z <= tilesAhead; z++)
         {
-            if (x == 0) continue; // road occupies center
+            for (int x = -tilesSide; x <= tilesSide; x++)
+            {
+                Vector2Int id = new Vector2Int(
+                    currentTile.x + x,
+                    currentTile.y + z
+                );
 
-            Vector3 pos =
-                transform.position +
-                transform.right * x * tileSize;
+                if (!spawned.ContainsKey(id))
+                    SpawnTile(id);
+            }
+        }
 
-            TerrainChunk t =
-                Instantiate(terrainPrefab, pos, Quaternion.identity, transform);
+        Cleanup();
+    }
 
-            // 🔹 PASS ROAD REFERENCE
-            t.roadCenter = roadReference;
+    void SpawnTile(Vector2Int id)
+    {
+        Vector3 pos = new Vector3(
+            id.x * tileSize,
+            0f,
+            id.y * tileSize
+        );
 
-            spawned.Add(t);
+        Terrain t = Instantiate(
+            terrainPrefab,
+            pos,
+            Quaternion.identity,
+            transform
+        );
+
+        // IMPORTANT: unique TerrainData per tile
+        TerrainData dataCopy = Instantiate(t.terrainData);
+        t.terrainData = dataCopy;
+
+        // Height generation happens INSIDE TerrainHeightSimple
+        // using absolute world coordinates (no offsets)
+
+        spawned.Add(id, t);
+    }
+
+    void Cleanup()
+    {
+        List<Vector2Int> remove = new();
+
+        foreach (var kv in spawned)
+        {
+            Vector2Int id = kv.Key;
+
+            if (Mathf.Abs(id.y - currentTile.y) > tilesAhead + 1)
+                remove.Add(id);
+        }
+
+        foreach (var id in remove)
+        {
+            Destroy(spawned[id].gameObject);
+            spawned.Remove(id);
         }
     }
 }
