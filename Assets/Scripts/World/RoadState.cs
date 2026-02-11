@@ -4,67 +4,73 @@ public class RoadState : MonoBehaviour
 {
     public PlayerDriveMetrics player;
 
-    [Range(0, 1)] public float agitation;
-
-    [Header("Rates")]
-    public float riseSpeed = 0.2f;
-    public float fallSpeed = 0.4f;
+    [Header("World Personality")]
+    [Range(0, 1)] public float serenity;   // calm side
+    [Range(0, 1)] public float tempest;    // intense side
 
     [Header("Outputs")]
     [Range(0, 1)] public float curvature;
     [Range(0, 1)] public float width;
     [Range(0, 1)] public float banking;
+    [Range(0, 1)] public float elevationEnergy;
+
+    float chapterMood;
+    float smoothMood;
 
     void Update()
     {
         if (!player) return;
 
-        UpdateAgitation();
-        UpdateRoadIntent();
+        UpdateMood();
+        UpdateGeometryIntent();
     }
 
-    void UpdateAgitation()
+    void UpdateMood()
     {
-        float stress =
-            player.aggression +
-            player.engineStress * 0.8f +
-            player.gearMistake * 0.6f;
+        float calmInfluence =
+            player.flow * 0.6f +
+            player.controlQuality * 0.4f;
 
-        if (stress > 0.4f)
-            agitation += stress * riseSpeed * Time.deltaTime;
-        else
-            agitation -= fallSpeed * Time.deltaTime;
+        float intenseInfluence =
+            player.intensity * 0.7f +
+            (1f - player.controlQuality) * 0.3f;
 
-        agitation = Mathf.Clamp01(agitation);
+        serenity =
+            Mathf.Lerp(serenity,
+                       calmInfluence,
+                       Time.deltaTime * 0.3f);
+
+        tempest =
+            Mathf.Lerp(tempest,
+                       intenseInfluence,
+                       Time.deltaTime * 0.3f);
+
+        chapterMood =
+            Mathf.Clamp01(tempest - serenity * 0.5f);
+
+        smoothMood =
+            Mathf.Lerp(smoothMood,
+                       chapterMood,
+                       Time.deltaTime * 0.2f);
     }
 
-    void UpdateRoadIntent()
+    void UpdateGeometryIntent()
     {
-        // FLOW comes from mechanical harmony
-        float harmony =
-            player.smoothness *
-            (1f - player.engineStress) *
-            (1f - player.gearMistake);
+        // Curvature influenced by rhythm
+        curvature =
+            Mathf.Lerp(0.2f, 0.8f, smoothMood) *
+            Mathf.Lerp(0.7f, 1.2f, player.rhythm);
 
-        // CURVATURE
-        curvature = Mathf.Lerp(
-            0.25f,   // calm flow
-            0.9f,    // tight turns
-            agitation
-        );
+        // Width
+        width =
+            Mathf.Lerp(1.2f, 0.7f, smoothMood);
 
-        // WIDTH
-        width = Mathf.Lerp(
-            1.0f,    // wide
-            0.5f,    // narrow
-            player.gearMistake
-        );
+        // Banking
+        banking =
+            Mathf.Lerp(0.8f, 0.2f, smoothMood);
 
-        // BANKING
-        banking = Mathf.Lerp(
-            0.9f * harmony, // only helps when calm
-            0.2f,
-            agitation
-        );
+        // Elevation intensity
+        elevationEnergy =
+            Mathf.Lerp(0.2f, 1f, smoothMood);
     }
 }

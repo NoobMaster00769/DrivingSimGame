@@ -1,18 +1,35 @@
 using UnityEngine;
 
-public class RoadSegment : MonoBehaviour
+public class RoadSegment
 {
-    public Transform Start;
-    public Transform End;
+    public Vector3 startPos;
+    public Vector3 startForward;
+    public Vector3 startUp;
 
-    void OnDrawGizmos()
+    public Vector3 endPos;
+    public Vector3 endForward;
+    public Vector3 endUp;
+
+    public float length;
+
+    public void Generate(float curvature, float banking)
     {
-        if (!Start || !End) return;
+        Quaternion turn =
+            Quaternion.AngleAxis(
+                Mathf.Lerp(-25f, 25f, curvature),
+                startUp
+            );
 
-        Gizmos.color = Color.green;
-        Gizmos.DrawSphere(Start.position, 0.4f);
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(End.position, 0.4f);
-        Gizmos.DrawLine(Start.position, End.position);
+        endForward = turn * startForward;
+
+        Quaternion bankRot =
+            Quaternion.AngleAxis(
+                Mathf.Lerp(-12f, 12f, banking),
+                endForward
+            );
+
+        endUp = bankRot * startUp;
+
+        endPos = startPos + endForward * length;
     }
 }
