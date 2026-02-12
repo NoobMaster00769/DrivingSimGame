@@ -15,6 +15,11 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Header("Section Settings")]
     public int sectionSize = 18;
 
+    [Header("Dream Surface")]
+    public Material surfaceMaterial;
+    public float surfaceWidth = 140f;
+    public float surfaceYOffset = -2f;
+
     private Vector3 currentPosition;
     private Vector3 currentForward;
 
@@ -25,10 +30,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     private float sectionBanking;
     private float sectionElevation;
 
-    private float elevationHeight;
-    private float elevationPhase;
-
     private int chunksInCurrentSection;
+
+    private float cumulativeElevation;
 
     private List<GameObject> roadChunks = new List<GameObject>();
 
@@ -86,17 +90,17 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         ApplySectionReactivity(chunk);
         ApplyElevation(chunk);
-        CreateTerrain(chunk);
+        CreateDreamSurface(chunk);
 
         roadChunks.Add(chunk);
 
         currentPosition += currentForward * chunkLength;
 
-        // Smooth curvature transition
+        // Smooth curvature
         smoothCurvature = Mathf.Lerp(
             smoothCurvature,
             sectionCurvature,
-            0.08f
+            0.05f
         );
 
         float turn =
@@ -113,7 +117,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     void ApplySectionReactivity(GameObject chunk)
     {
         float width =
-            Mathf.Lerp(1.25f, 0.75f, sectionWidth);
+            Mathf.Lerp(1.3f, 0.75f, sectionWidth);
 
         chunk.transform.localScale =
             new Vector3(width, 1f, 1f);
@@ -126,22 +130,13 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     void ApplyElevation(GameObject chunk)
     {
-        elevationPhase += 0.18f;
-
         float amplitude =
-            Mathf.Lerp(2f, 9f, sectionElevation);
+            Mathf.Lerp(0.5f, 4f, sectionElevation);
 
-        float rhythmInfluence =
-            roadState.player.rhythm;
-
-        elevationHeight +=
-            Mathf.Sin(elevationPhase) *
-            amplitude *
-            rhythmInfluence *
-            0.02f;
+        cumulativeElevation += amplitude * 0.02f;
 
         chunk.transform.position +=
-            Vector3.up * elevationHeight;
+            Vector3.up * cumulativeElevation;
     }
 
     void Cleanup()
@@ -161,29 +156,30 @@ public class LevelLayoutGenerator : MonoBehaviour
         }
     }
 
-    void CreateTerrain(GameObject chunk)
+    void CreateDreamSurface(GameObject chunk)
     {
-        float sideOffset = 28f;
+        GameObject surface =
+            GameObject.CreatePrimitive(PrimitiveType.Quad);
 
-        GameObject left = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        GameObject right = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        surface.transform.position =
+            chunk.transform.position
+            + Vector3.up * surfaceYOffset;
 
-        left.transform.position =
-            chunk.transform.position - chunk.transform.right * sideOffset;
+        surface.transform.rotation =
+            chunk.transform.rotation *
+            Quaternion.Euler(90f, 0f, 0f);
 
-        right.transform.position =
-            chunk.transform.position + chunk.transform.right * sideOffset;
+        surface.transform.localScale =
+            new Vector3(surfaceWidth, chunkLength, 1f);
 
-        left.transform.rotation = chunk.transform.rotation;
-        right.transform.rotation = chunk.transform.rotation;
+        surface.transform.parent = chunk.transform;
 
-        left.transform.localScale =
-            new Vector3(50f, 2f, chunkLength);
+        if (surfaceMaterial != null)
+        {
+            surface.GetComponent<MeshRenderer>().material =
+                surfaceMaterial;
+        }
 
-        right.transform.localScale =
-            new Vector3(50f, 2f, chunkLength);
-
-        left.transform.parent = chunk.transform;
-        right.transform.parent = chunk.transform;
+        Destroy(surface.GetComponent<Collider>());
     }
 }

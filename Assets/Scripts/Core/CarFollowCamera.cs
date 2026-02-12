@@ -16,7 +16,7 @@ public class CarFollowCamera : MonoBehaviour
     [Header("Look Ahead")]
     public float lookAheadDistance = 10f;
 
-    [Header("FOV Settings")]
+    [Header("FOV")]
     public float baseFOV = 65f;
     public float maxFOV = 75f;
     public float flowFOV = 60f;
@@ -38,12 +38,16 @@ public class CarFollowCamera : MonoBehaviour
         Vector3 velocity = rb.velocity;
         float speed = velocity.magnitude;
 
-        // Dynamic offset (pull back slightly at high speed)
         Vector3 dynamicOffset =
             baseOffset - new Vector3(0f, 0f, speed * 0.05f);
 
         Vector3 desiredPos =
             target.TransformPoint(dynamicOffset);
+
+        float dreamFloat =
+            Mathf.Sin(Time.time * 0.3f) * 0.1f;
+
+        desiredPos += Vector3.up * dreamFloat;
 
         transform.position = Vector3.Lerp(
             transform.position,
@@ -51,7 +55,6 @@ public class CarFollowCamera : MonoBehaviour
             Time.deltaTime * positionSmooth
         );
 
-        // Look ahead
         Vector3 lookPoint =
             target.position +
             velocity.normalized * lookAheadDistance;
@@ -68,40 +71,22 @@ public class CarFollowCamera : MonoBehaviour
             Time.deltaTime * rotationSmooth
         );
 
-        UpdateFOV(speed);
-        ApplyBankRoll();
+        UpdateFOV();
     }
 
-    void UpdateFOV(float speed)
+    void UpdateFOV()
     {
-        float intensity =
-            metrics ? metrics.intensity : 0f;
-
-        float flow =
-            metrics ? metrics.flow : 0f;
+        if (!metrics) return;
 
         float targetFOV =
-            Mathf.Lerp(baseFOV, maxFOV, intensity);
+            Mathf.Lerp(baseFOV, maxFOV, metrics.intensity * 0.7f);
 
-        // Calm flow narrows FOV slightly
         targetFOV =
-            Mathf.Lerp(targetFOV, flowFOV, flow * 0.5f);
+            Mathf.Lerp(targetFOV, flowFOV, metrics.flow * 0.5f);
 
         cam.fieldOfView =
             Mathf.Lerp(cam.fieldOfView,
                        targetFOV,
                        Time.deltaTime * 2f);
-    }
-
-    void ApplyBankRoll()
-    {
-        if (!metrics) return;
-
-        float roll =
-            Mathf.Lerp(-2f, 2f, metrics.intensity);
-
-        Vector3 euler = transform.eulerAngles;
-        euler.z = Mathf.LerpAngle(euler.z, roll, Time.deltaTime * 2f);
-        transform.eulerAngles = euler;
     }
 }
