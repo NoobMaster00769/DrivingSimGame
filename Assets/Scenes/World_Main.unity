@@ -23,10 +23,10 @@ RenderSettings:
   m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 1
-  m_AmbientMode: 3
+  m_AmbientIntensity: 0.47
+  m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: f3772e4bde26e014289e515d9064a008, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: f531e09e2ad2fb440b4eed7605863143, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 2127979727}
+  m_Sun: {fileID: 0}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -209,14 +209,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadState: {fileID: 155815526}
   metrics: {fileID: 2092198420}
-  surfaceMaterial: {fileID: 2100000, guid: cacebd804b8ead040a5badc8692e8c03, type: 2}
-  roadMaterial: {fileID: 0}
+  roadMaterial: {fileID: 2100000, guid: a2b9b40002cd30e448171697f65ddf88, type: 2}
   skyMaterial: {fileID: 2100000, guid: f3772e4bde26e014289e515d9064a008, type: 2}
+  waterMaterial: {fileID: 2100000, guid: 16ca5feb16ef2d744852096378401523, type: 2}
   serenityColor: {r: 0.05, g: 0.12, b: 0.2, a: 1}
   tempestColor: {r: 0.02, g: 0.03, b: 0.15, a: 1}
   flowTint: {r: 0.1, g: 0.25, b: 0.3, a: 1}
-  breatheSpeed: 0.4
-  breatheAmplitude: 0.04
 --- !u!4 &387416384
 Transform:
   m_ObjectHideFlags: 0
@@ -268,9 +266,16 @@ MonoBehaviour:
   chunksAhead: 15
   chunksBehind: 5
   sectionSize: 18
-  surfaceMaterial: {fileID: 2100000, guid: cacebd804b8ead040a5badc8692e8c03, type: 2}
-  surfaceWidth: 120
-  surfaceYOffset: -2
+  waterPrefab: {fileID: 4050938500205680382, guid: 000c44fc089f8f04285e12e2a3cfd18b, type: 3}
+  waterOffsetY: -3
+  waterWidth: 200
+  sideWaterCount: 2
+  starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
+  starRoadOffsetY: 0.05
+  boundaryParticlePrefab: {fileID: 2459259389070916698, guid: fda31d4e6075ada4b8847638309d2076, type: 3}
+  boundaryOffsetY: 0.2
+  boundaryHeight: 1.5
+  boundaryThickness: 0.5
 --- !u!4 &702803717
 Transform:
   m_ObjectHideFlags: 0
@@ -5125,8 +5130,57 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360808682}
   serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 54.481976, y: 204.09613, z: 174.49666}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 48541895}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1608102596
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1608102598}
+  - component: {fileID: 1608102597}
+  m_Layer: 0
+  m_Name: DreamPost
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1608102597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1608102596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: ceef17c74039b4748a412ce9d7ed14db, type: 2}
+--- !u!4 &1608102598
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1608102596}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 54.481976, y: 204.30614, z: 177.26666}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5154,7 +5208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.21
+      value: 0.89
       objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5190,7 +5244,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1360808686}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6678307814923809374, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       insertIndex: -1
@@ -5313,7 +5370,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -5522,5 +5579,5 @@ SceneRoots:
   - {fileID: 702803717}
   - {fileID: 155815527}
   - {fileID: 1748035233}
-  - {fileID: 1360808686}
   - {fileID: 387416384}
+  - {fileID: 1608102598}
