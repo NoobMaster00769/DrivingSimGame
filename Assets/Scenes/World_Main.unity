@@ -16,10 +16,10 @@ RenderSettings:
   serializedVersion: 9
   m_Fog: 1
   m_FogColor: {r: 0.063235685, g: 0.03184205, b: 0.44025147, a: 1}
-  m_FogMode: 1
-  m_FogDensity: 0.01
+  m_FogMode: 2
+  m_FogDensity: 0.00075
   m_LinearFogStart: 0
-  m_LinearFogEnd: 400
+  m_LinearFogEnd: 1200
   m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
@@ -209,12 +209,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadState: {fileID: 155815526}
   metrics: {fileID: 2092198420}
-  roadMaterial: {fileID: 2100000, guid: a2b9b40002cd30e448171697f65ddf88, type: 2}
-  skyMaterial: {fileID: 2100000, guid: f3772e4bde26e014289e515d9064a008, type: 2}
-  waterMaterial: {fileID: 2100000, guid: 16ca5feb16ef2d744852096378401523, type: 2}
-  serenityColor: {r: 0.05, g: 0.12, b: 0.2, a: 1}
-  tempestColor: {r: 0.02, g: 0.03, b: 0.15, a: 1}
-  flowTint: {r: 0.1, g: 0.25, b: 0.3, a: 1}
+  waterMaterial: {fileID: 2100000, guid: afb9a70acc433dd4ba687e9b328c8d02, type: 2}
+  minWaveScale: 0.018
+  maxWaveScale: 0.035
+  minWaveSpeed: 0.6
+  maxWaveSpeed: 0.7
+  baseSkyRotationSpeed: 0.15
+  tempestSkyBoost: 1.2
+  flowSkyBoost: 0.8
+  elevationBreathSpeed: 0.2
+  elevationIntensity: 1
+  mainCamera: {fileID: 2087329285}
+  fovBoostAmount: 3
 --- !u!4 &387416384
 Transform:
   m_ObjectHideFlags: 0
@@ -274,8 +280,12 @@ MonoBehaviour:
   starRoadOffsetY: 0.05
   boundaryParticlePrefab: {fileID: 2459259389070916698, guid: fda31d4e6075ada4b8847638309d2076, type: 3}
   boundaryOffsetY: 0.2
-  boundaryHeight: 1.5
+  boundaryHeight: 2.5
   boundaryThickness: 0.5
+  pulseSpeed: 2
+  pulseAmount: 0.15
+  speedInfluence: 0.05
+  curvatureInfluence: 500
 --- !u!4 &702803717
 Transform:
   m_ObjectHideFlags: 0
@@ -291,6 +301,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1000864157
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1000864158}
+  - component: {fileID: 1000864159}
+  m_Layer: 0
+  m_Name: CameraRig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1000864158
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000864157}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2087329286}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1000864159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000864157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a23c6b041304ca4dac45d68e58c79e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roadState: {fileID: 155815526}
+  maxPitch: 4
+  waveSpeed: 0.5
+  smoothSpeed: 3
 --- !u!1 &1360808682
 GameObject:
   m_ObjectHideFlags: 0
@@ -5130,8 +5189,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360808682}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 54.481976, y: 204.09613, z: 174.49666}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5208,7 +5267,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.89
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8517469383943330826, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5340,12 +5399,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2087329283}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 15.8, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1000864158}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2087329287
 MonoBehaviour:
@@ -5574,7 +5633,7 @@ MonoBehaviour:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2087329286}
+  - {fileID: 1000864158}
   - {fileID: 2127979728}
   - {fileID: 702803717}
   - {fileID: 155815527}

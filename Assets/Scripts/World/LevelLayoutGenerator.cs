@@ -31,6 +31,12 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float boundaryHeight = 2f;
     public float boundaryThickness = 0.5f;
 
+    [Header("Reactivity")]
+    public float pulseSpeed = 2f;
+    public float pulseAmount = 0.15f;
+    public float speedInfluence = 0.05f;
+    public float curvatureInfluence = 500f;
+
     private Vector3 currentPosition;
     private Vector3 currentForward;
 
@@ -41,10 +47,10 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     private int chunksInCurrentSection;
 
-    private List<GameObject> roadChunks = new List<GameObject>();
-    private List<GameObject> waterChunks = new List<GameObject>();
-    private List<GameObject> starRoadChunks = new List<GameObject>();
-    private List<GameObject> boundaryChunks = new List<GameObject>();
+    private List<GameObject> roadChunks = new();
+    private List<GameObject> waterChunks = new();
+    private List<GameObject> starRoadChunks = new();
+    private List<GameObject> boundaryChunks = new();
 
     void Start()
     {
@@ -75,7 +81,6 @@ public class LevelLayoutGenerator : MonoBehaviour
         sectionCurvature = roadState.curvature;
         sectionWidth = roadState.width;
         sectionBanking = roadState.banking;
-
         chunksInCurrentSection = 0;
     }
 
@@ -94,21 +99,32 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         ApplySectionReactivity(chunk);
 
-        SpawnWaterGrid(currentPosition, roadRotation);
+        SpawnWaterGrid(chunk.transform.position, roadRotation);
         SpawnStarRoadFX(chunk);
         SpawnBoundaryFX(chunk);
 
         roadChunks.Add(chunk);
 
-        currentPosition += currentForward * chunkLength;
+        Transform end = chunk.transform.Find("End");
+
+        if (end != null)
+        {
+            currentPosition = end.position;
+            currentForward = end.forward;
+        }
+        else
+        {
+            currentPosition += currentForward * chunkLength;
+        }
 
         smoothCurvature = Mathf.Lerp(
             smoothCurvature,
             sectionCurvature,
-            0.05f
+            0.06f
         );
 
-        float turn = Mathf.Lerp(-2f, 2f, smoothCurvature);
+        float turn =
+            Mathf.Lerp(-2.5f, 2.5f, smoothCurvature);
 
         currentForward =
             Quaternion.AngleAxis(turn, Vector3.up) * currentForward;
@@ -121,7 +137,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     void ApplySectionReactivity(GameObject chunk)
     {
         float width =
-            Mathf.Lerp(1.3f, 0.75f, sectionWidth);
+            Mathf.Lerp(1.2f, 0.85f, sectionWidth);
 
         chunk.transform.localScale =
             new Vector3(width, 1f, 1f);
@@ -132,17 +148,14 @@ public class LevelLayoutGenerator : MonoBehaviour
         chunk.transform.Rotate(Vector3.forward, bank, Space.Self);
     }
 
-    // =============================
-    // STAR ROAD FX (UNCHANGED)
-    // =============================
-
     void SpawnStarRoadFX(GameObject chunk)
     {
         if (!starRoadPrefab) return;
 
         GameObject fx = Instantiate(starRoadPrefab);
         fx.transform.parent = chunk.transform;
-        fx.transform.localPosition = new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
+        fx.transform.localPosition =
+            new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
         fx.transform.localRotation = Quaternion.identity;
 
         ParticleSystem ps = fx.GetComponent<ParticleSystem>();
@@ -172,40 +185,37 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         starRoadChunks.Add(fx);
     }
-    // =============================
-    // BOUNDARY FX + COLLIDERS (FIXED PROPERLY)
-    // =============================
 
     void SpawnBoundaryFX(GameObject chunk)
     {
         if (!boundaryParticlePrefab) return;
 
-        // This MUST match your star road base width
-        float baseWidth = 10f;
+        Transform boundaries = chunk.transform.Find("Boundaries");
+        if (!boundaries) return;
 
-        float scaledWidth = baseWidth * chunk.transform.localScale.x;
-        float halfWidth = scaledWidth * 0.5f;
+        Transform left = boundaries.Find("Left");
+        Transform right = boundaries.Find("Right");
 
-        CreateBoundary(chunk, -halfWidth);
-        CreateBoundary(chunk, halfWidth);
+        if (!left || !right) return;
+
+        CreateBoundary(chunk, left.localPosition);
+        CreateBoundary(chunk, right.localPosition);
     }
 
-    void CreateBoundary(GameObject chunk, float xOffset)
+    void CreateBoundary(GameObject chunk, Vector3 anchorLocalPos)
     {
-        // VISUAL PARTICLES
         GameObject fx = Instantiate(boundaryParticlePrefab);
         fx.transform.parent = chunk.transform;
         fx.transform.localPosition =
-            new Vector3(xOffset, boundaryOffsetY, 0f);
+            anchorLocalPos + Vector3.up * boundaryOffsetY;
         fx.transform.localRotation = Quaternion.identity;
 
         boundaryChunks.Add(fx);
 
-        // PHYSICAL COLLIDER WALL
-        GameObject wall = new GameObject("BoundaryCollider");
+        GameObject wall = new("BoundaryCollider");
         wall.transform.parent = chunk.transform;
         wall.transform.localPosition =
-            new Vector3(xOffset, boundaryHeight * 0.5f, 0f);
+            anchorLocalPos + Vector3.up * (boundaryHeight * 0.5f);
         wall.transform.localRotation = Quaternion.identity;
 
         BoxCollider collider = wall.AddComponent<BoxCollider>();
@@ -217,12 +227,6 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         boundaryChunks.Add(wall);
     }
-
-
-
-    // =============================
-    // WATER GRID (UNCHANGED)
-    // =============================
 
     void SpawnWaterGrid(Vector3 basePosition, Quaternion roadRotation)
     {
@@ -258,10 +262,6 @@ public class LevelLayoutGenerator : MonoBehaviour
         waterChunks.Add(water);
     }
 
-    // =============================
-    // CLEANUP
-    // =============================
-
     void Cleanup()
     {
         if (roadChunks.Count <= chunksAhead + chunksBehind)
@@ -276,33 +276,6 @@ public class LevelLayoutGenerator : MonoBehaviour
         {
             Destroy(oldestRoad);
             roadChunks.RemoveAt(0);
-
-            int slabsPerChunk = 1 + (sideWaterCount * 2);
-
-            for (int i = 0; i < slabsPerChunk; i++)
-            {
-                if (waterChunks.Count > 0)
-                {
-                    Destroy(waterChunks[0]);
-                    waterChunks.RemoveAt(0);
-                }
-            }
-
-            if (starRoadChunks.Count > 0)
-            {
-                Destroy(starRoadChunks[0]);
-                starRoadChunks.RemoveAt(0);
-            }
-
-            // 2 particles + 2 colliders per chunk
-            for (int i = 0; i < 4; i++)
-            {
-                if (boundaryChunks.Count > 0)
-                {
-                    Destroy(boundaryChunks[0]);
-                    boundaryChunks.RemoveAt(0);
-                }
-            }
         }
     }
 }

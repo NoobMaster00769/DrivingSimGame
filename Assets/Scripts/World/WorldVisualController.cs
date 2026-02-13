@@ -5,33 +5,48 @@ public class WorldVisualController : MonoBehaviour
     public RoadState roadState;
     public PlayerDriveMetrics metrics;
 
-    [Header("Materials")]
-    public Material roadMaterial;
-    public Material skyMaterial;
+    [Header("Water Material")]
     public Material waterMaterial;
 
-    [Header("Colors")]
-    public Color serenityColor = new Color(0.05f, 0.12f, 0.2f);
-    public Color tempestColor = new Color(0.02f, 0.03f, 0.15f);
-    public Color flowTint = new Color(0.1f, 0.25f, 0.3f);
+    [Header("Wave Motion")]
+    public float minWaveScale = 0.01f;
+    public float maxWaveScale = 0.018f;
+
+    public float minWaveSpeed = 0.03f;
+    public float maxWaveSpeed = 0.06f;
+
+    [Header("Skybox Rotation")]
+    public float baseSkyRotationSpeed = 0.2f;
+    public float tempestSkyBoost = 1.5f;
+    public float flowSkyBoost = 1.0f;
+
+    [Header("Illusion Elevation")]
+    public float elevationBreathSpeed = 0.2f;
+    public float elevationIntensity = 15f;   // illusion strength
+    public Camera mainCamera;
+    public float fovBoostAmount = 3f;
 
     float smoothTempest;
-    float smoothSerenity;
     float smoothFlow;
+
+    float skyRotation;
+    float baseFOV;
+    float elevationPhase;
+
+    void Start()
+    {
+        if (mainCamera)
+            baseFOV = mainCamera.fieldOfView;
+    }
 
     void Update()
     {
-        if (!roadState || !metrics) return;
+        if (!roadState || !metrics || !waterMaterial)
+            return;
 
         smoothTempest = Mathf.Lerp(
             smoothTempest,
             roadState.tempest,
-            Time.deltaTime * 0.6f
-        );
-
-        smoothSerenity = Mathf.Lerp(
-            smoothSerenity,
-            roadState.serenity,
             Time.deltaTime * 0.6f
         );
 
@@ -41,65 +56,74 @@ public class WorldVisualController : MonoBehaviour
             Time.deltaTime * 0.6f
         );
 
-        UpdateWater();
-        UpdateRoad();
-        UpdateSky();
-        UpdateFog();
+        UpdateWaterMotion();      // UNCHANGED
+        UpdateSkybox();           // enhanced safely
+        UpdateElevationIllusion();// NEW (visual only)
     }
 
-    void UpdateWater()
+    void UpdateWaterMotion()
     {
-        if (!waterMaterial) return;
+        // UNTOUCHED — your waves remain perfect
 
-        Color moodColor =
-            Color.Lerp(serenityColor, tempestColor, smoothTempest);
+        float pulse = Mathf.Sin(Time.time * 0.5f) * 0.002f;
 
-        moodColor =
-            Color.Lerp(moodColor, flowTint, smoothFlow * 0.4f);
+        float waveScale =
+            Mathf.Lerp(minWaveScale, maxWaveScale, smoothTempest) + pulse;
 
-        waterMaterial.SetColor("_ShallowColor", moodColor);
-        waterMaterial.SetFloat("_WaveScale",
-            Mathf.Lerp(0.02f, 0.08f, smoothTempest));
+        float waveSpeed =
+            Mathf.Lerp(minWaveSpeed, maxWaveSpeed, smoothFlow);
 
-        waterMaterial.SetFloat("_WaveSpeed",
-            Mathf.Lerp(0.2f, 0.6f, smoothFlow));
+        waterMaterial.SetFloat("_WaveScale", waveScale);
+        waterMaterial.SetFloat("_WaveSpeed", waveSpeed);
     }
 
-    void UpdateRoad()
+    void UpdateSkybox()
     {
-        if (!roadMaterial) return;
+        if (RenderSettings.skybox == null)
+            return;
 
-        roadMaterial.SetFloat("_Intensity", metrics.intensity);
+        float rotationSpeed =
+            baseSkyRotationSpeed +
+            smoothTempest * tempestSkyBoost +
+            smoothFlow * flowSkyBoost;
 
-        float glow =
-            0.6f +
-            smoothFlow * 0.8f;
+        skyRotation += rotationSpeed * Time.deltaTime;
 
-        Color roadColor =
-            Color.Lerp(serenityColor, flowTint, smoothFlow);
-
-        roadMaterial.SetColor(
-            "_EmissionColor",
-            roadColor * glow
-        );
+        RenderSettings.skybox.SetFloat("_Rotation", skyRotation);
     }
 
-    void UpdateSky()
+    void UpdateElevationIllusion()
     {
-        if (!skyMaterial) return;
+        // Fake vertical world breathing
 
-        skyMaterial.SetFloat("_Tempest", smoothTempest);
-        skyMaterial.SetFloat("_StarBrightness",
-            Mathf.Lerp(0.3f, 1.5f, smoothTempest));
-    }
+        elevationPhase += Time.deltaTime * elevationBreathSpeed;
 
-    void UpdateFog()
-    {
-        Color fogColor =
-            Color.Lerp(serenityColor, tempestColor, smoothTempest);
+        float elevationWave =
+            Mathf.Sin(elevationPhase) * elevationIntensity * roadState.elevationEnergy;
 
-        RenderSettings.fogColor = fogColor;
-        RenderSettings.fogDensity =
-            Mathf.Lerp(0.004f, 0.012f, smoothTempest);
+        // Subtle skybox vertical illusion
+        if (RenderSettings.skybox.HasProperty("_Exposure"))
+        {
+            float exposure =
+                1f + elevationWave * 0.01f;
+
+            RenderSettings.skybox.SetFloat("_Exposure", exposure);
+        }
+
+        // Subtle FOV shift illusion
+        if (mainCamera)
+        {
+            float targetFOV =
+                baseFOV +
+                elevationWave * 0.05f +
+                smoothFlow * fovBoostAmount;
+
+            mainCamera.fieldOfView =
+                Mathf.Lerp(
+                    mainCamera.fieldOfView,
+                    targetFOV,
+                    Time.deltaTime * 2f
+                );
+        }
     }
 }

@@ -5,8 +5,8 @@ public class RoadState : MonoBehaviour
     public PlayerDriveMetrics player;
 
     [Header("World Personality")]
-    [Range(0, 1)] public float serenity;   // calm side
-    [Range(0, 1)] public float tempest;    // intense side
+    [Range(0, 1)] public float serenity;
+    [Range(0, 1)] public float tempest;
 
     [Header("Outputs")]
     [Range(0, 1)] public float curvature;
@@ -14,63 +14,71 @@ public class RoadState : MonoBehaviour
     [Range(0, 1)] public float banking;
     [Range(0, 1)] public float elevationEnergy;
 
-    float chapterMood;
     float smoothMood;
+    float timeAccumulator;
 
     void Update()
     {
         if (!player) return;
 
-        UpdateMood();
-        UpdateGeometryIntent();
+        timeAccumulator += Time.deltaTime;
+
+        UpdateEmotion();
+        UpdateGeometry();
     }
 
-    void UpdateMood()
+    void UpdateEmotion()
     {
-        float calmInfluence =
+        float calm =
             player.flow * 0.6f +
             player.controlQuality * 0.4f;
 
-        float intenseInfluence =
-            player.intensity * 0.7f +
-            (1f - player.controlQuality) * 0.3f;
+        float intense =
+            player.intensity * 0.6f +
+            (1f - player.controlQuality) * 0.4f;
 
-        serenity =
-            Mathf.Lerp(serenity,
-                       calmInfluence,
-                       Time.deltaTime * 0.3f);
+        serenity = Mathf.Lerp(serenity, calm, Time.deltaTime * 0.4f);
+        tempest = Mathf.Lerp(tempest, intense, Time.deltaTime * 0.4f);
 
-        tempest =
-            Mathf.Lerp(tempest,
-                       intenseInfluence,
-                       Time.deltaTime * 0.3f);
-
-        chapterMood =
-            Mathf.Clamp01(tempest - serenity * 0.5f);
+        float mood = Mathf.Clamp01(tempest - serenity * 0.4f);
 
         smoothMood =
             Mathf.Lerp(smoothMood,
-                       chapterMood,
-                       Time.deltaTime * 0.2f);
+                       mood,
+                       Time.deltaTime * 0.4f);
     }
 
-    void UpdateGeometryIntent()
+    void UpdateGeometry()
     {
-        // Curvature influenced by rhythm
+        // Faster oscillation but smaller swing
+        float wave =
+            Mathf.Sin(timeAccumulator * 0.6f);
+
         curvature =
-            Mathf.Lerp(0.2f, 0.8f, smoothMood) *
-            Mathf.Lerp(0.7f, 1.2f, player.rhythm);
+            Mathf.Clamp01(
+                0.45f +
+                wave * 0.2f +
+                smoothMood * 0.2f
+            );
 
-        // Width
         width =
-            Mathf.Lerp(1.2f, 0.7f, smoothMood);
+            Mathf.Clamp01(
+                0.6f +
+                Mathf.Sin(timeAccumulator * 0.4f) * 0.15f
+            );
 
-        // Banking
         banking =
-            Mathf.Lerp(0.8f, 0.2f, smoothMood);
+            Mathf.Clamp01(
+                0.5f +
+                Mathf.Sin(timeAccumulator * 0.7f) * 0.25f
+            );
 
-        // Elevation intensity
         elevationEnergy =
-            Mathf.Lerp(0.2f, 1f, smoothMood);
+    Mathf.Clamp01(
+        0.4f +
+        Mathf.Sin(Time.time * 0.2f) * 0.3f +
+        smoothMood * 0.3f
+    );
+
     }
 }
