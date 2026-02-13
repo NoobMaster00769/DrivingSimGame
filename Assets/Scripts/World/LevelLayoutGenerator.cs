@@ -45,6 +45,8 @@ public class LevelLayoutGenerator : MonoBehaviour
     private float sectionWidth;
     private float sectionBanking;
 
+    private float turnMomentum; // NEW
+
     private int chunksInCurrentSection;
 
     private List<GameObject> roadChunks = new();
@@ -117,17 +119,27 @@ public class LevelLayoutGenerator : MonoBehaviour
             currentPosition += currentForward * chunkLength;
         }
 
+        // -----------------------------
+        // IMPROVED CURVE MOMENTUM
+        // -----------------------------
+
         smoothCurvature = Mathf.Lerp(
-            smoothCurvature,
-            sectionCurvature,
-            0.06f
+    smoothCurvature,
+    sectionCurvature,
+    0.1f
+);
+
+        float targetTurn =
+            Mathf.Lerp(-4.5f, 4.5f, smoothCurvature);
+
+        turnMomentum = Mathf.Lerp(
+            turnMomentum,
+            targetTurn,
+            0.2f
         );
 
-        float turn =
-            Mathf.Lerp(-2.5f, 2.5f, smoothCurvature);
-
         currentForward =
-            Quaternion.AngleAxis(turn, Vector3.up) * currentForward;
+            Quaternion.AngleAxis(turnMomentum, Vector3.up) * currentForward;
 
         currentForward.Normalize();
 
@@ -143,7 +155,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             new Vector3(width, 1f, 1f);
 
         float bank =
-            Mathf.Lerp(-4f, 4f, sectionBanking);
+            Mathf.Lerp(-5f, 5f, sectionBanking);
 
         chunk.transform.Rotate(Vector3.forward, bank, Space.Self);
     }

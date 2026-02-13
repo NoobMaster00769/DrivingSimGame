@@ -14,71 +14,129 @@ public class RoadState : MonoBehaviour
     [Range(0, 1)] public float banking;
     [Range(0, 1)] public float elevationEnergy;
 
-    float smoothMood;
     float timeAccumulator;
+
+    // Section system
+    float sectionTimer;
+    float sectionDuration;
+    int sectionType;
+    // 0 = Wide Flow
+    // 1 = S Curves
+    // 2 = Tight Technical
+    // 3 = High Speed Run
+
+    void Start()
+    {
+        PickNewSection();
+    }
 
     void Update()
     {
         if (!player) return;
 
         timeAccumulator += Time.deltaTime;
+        sectionTimer += Time.deltaTime;
 
-        UpdateEmotion();
+        if (sectionTimer > sectionDuration)
+            PickNewSection();
+
         UpdateGeometry();
     }
 
-    void UpdateEmotion()
+    void PickNewSection()
     {
-        float calm =
-            player.flow * 0.6f +
-            player.controlQuality * 0.4f;
+        sectionTimer = 0f;
+        sectionDuration = Random.Range(7f, 16f);
 
-        float intense =
-            player.intensity * 0.6f +
-            (1f - player.controlQuality) * 0.4f;
-
-        serenity = Mathf.Lerp(serenity, calm, Time.deltaTime * 0.4f);
-        tempest = Mathf.Lerp(tempest, intense, Time.deltaTime * 0.4f);
-
-        float mood = Mathf.Clamp01(tempest - serenity * 0.4f);
-
-        smoothMood =
-            Mathf.Lerp(smoothMood,
-                       mood,
-                       Time.deltaTime * 0.4f);
+        sectionType = Random.Range(0, 4);
     }
 
     void UpdateGeometry()
     {
-        // Faster oscillation but smaller swing
-        float wave =
-            Mathf.Sin(timeAccumulator * 0.6f);
+        float t = timeAccumulator;
 
-        curvature =
-            Mathf.Clamp01(
-                0.45f +
-                wave * 0.2f +
-                smoothMood * 0.2f
-            );
+        switch (sectionType)
+        {
+            // -----------------------------
+            // 0 — WIDE FLOWING HIGHWAY
+            // -----------------------------
+            case 0:
+                curvature =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 0.5f) * 0.2f
+                    );
 
-        width =
-            Mathf.Clamp01(
-                0.6f +
-                Mathf.Sin(timeAccumulator * 0.4f) * 0.15f
-            );
+                width = 0.8f;
 
-        banking =
-            Mathf.Clamp01(
-                0.5f +
-                Mathf.Sin(timeAccumulator * 0.7f) * 0.25f
-            );
+                banking =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 0.6f) * 0.15f
+                    );
+                break;
 
+            // -----------------------------
+            // 1 — RHYTHMIC S-CURVES
+            // -----------------------------
+            case 1:
+                curvature =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 1.2f) * 0.35f
+                    );
+
+                width = 0.65f;
+
+                banking =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 1.2f) * 0.3f
+                    );
+                break;
+
+            // -----------------------------
+            // 2 — TIGHT TECHNICAL
+            // -----------------------------
+            case 2:
+                curvature =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.PerlinNoise(t * 1.8f, 1f) * 0.6f
+                    );
+
+                width = 0.55f;
+
+                banking =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.PerlinNoise(t * 1.5f, 2f) * 0.4f
+                    );
+                break;
+
+            // -----------------------------
+            // 3 — HIGH SPEED STRAIGHT
+            // -----------------------------
+            case 3:
+                curvature =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 0.3f) * 0.1f
+                    );
+
+                width = 0.9f;
+
+                banking =
+                    Mathf.Clamp01(
+                        0.5f +
+                        Mathf.Sin(t * 0.4f) * 0.1f
+                    );
+                break;
+        }
+
+        // Elevation now purely aesthetic
         elevationEnergy =
-    Mathf.Clamp01(
-        0.4f +
-        Mathf.Sin(Time.time * 0.2f) * 0.3f +
-        smoothMood * 0.3f
-    );
-
+            0.5f +
+            Mathf.Sin(Time.time * 0.15f) * 0.25f;
     }
 }

@@ -217,10 +217,6 @@ MonoBehaviour:
   baseSkyRotationSpeed: 0.15
   tempestSkyBoost: 1.2
   flowSkyBoost: 0.8
-  elevationBreathSpeed: 0.2
-  elevationIntensity: 1
-  mainCamera: {fileID: 2087329285}
-  fovBoostAmount: 3
 --- !u!4 &387416384
 Transform:
   m_ObjectHideFlags: 0
@@ -310,7 +306,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1000864158}
-  - component: {fileID: 1000864159}
   m_Layer: 0
   m_Name: CameraRig
   m_TagString: Untagged
@@ -334,22 +329,6 @@ Transform:
   - {fileID: 2087329286}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1000864159
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000864157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a23c6b041304ca4dac45d68e58c79e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roadState: {fileID: 155815526}
-  maxPitch: 4
-  waveSpeed: 0.5
-  smoothSpeed: 3
 --- !u!1 &1360808682
 GameObject:
   m_ObjectHideFlags: 0
@@ -5372,8 +5351,8 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  far clip plane: 1500
+  field of view: 56
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -5463,14 +5442,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 48541895}
-  metrics: {fileID: 2092198420}
-  baseOffset: {x: 0, y: 4, z: -8}
-  positionSmooth: 6
-  rotationSmooth: 8
-  lookAheadDistance: 8
-  baseFOV: 65
-  maxFOV: 75
-  flowFOV: 60
+  baseOffset: {x: 0, y: 6.8, z: -8.5}
+  verticalBias: -3.5
+  positionSmooth: 1.6
+  rotationSmooth: 1.8
+  lookAheadDistance: 16
+  lookAheadSmooth: 1.1
+  horizonTiltAmount: 0.4
+  horizonTiltSpeed: 0.015
+  presenceBreathAmount: 0.25
+  presenceBreathSpeed: 0.035
 --- !u!1 &2092198415 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6678307814923809374, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}

@@ -1,5 +1,33 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7621691840645095093
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5e1dc532bcb41949b58bc4f2abfbb7e, type: 3}
+  m_Name: LensDistortion
+  m_EditorClassIdentifier: 
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: -0.05
+  xMultiplier:
+    m_OverrideState: 0
+    m_Value: 1
+  yMultiplier:
+    m_OverrideState: 0
+    m_Value: 1
+  center:
+    m_OverrideState: 0
+    m_Value: {x: 0.5, y: 0.5}
+  scale:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &-5075696052046488139
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -15,19 +43,19 @@ MonoBehaviour:
   active: 1
   postExposure:
     m_OverrideState: 1
-    m_Value: 0.4
+    m_Value: 0.7
   contrast:
     m_OverrideState: 1
-    m_Value: 10
+    m_Value: 2
   colorFilter:
     m_OverrideState: 0
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   hueShift:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: -3
   saturation:
     m_OverrideState: 1
-    m_Value: 15
+    m_Value: 12
 --- !u!114 &-2193942223480458820
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -49,13 +77,13 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.2
+    m_Value: 0.108
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.35
+    m_Value: 0.552
   rounded:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &-1351863360373777884
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -96,6 +124,31 @@ MonoBehaviour:
   maxNits:
     m_OverrideState: 0
     m_Value: 1000
+--- !u!114 &-789707832464008304
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29fa0085f50d5e54f8144f766051a691, type: 3}
+  m_Name: FilmGrain
+  m_EditorClassIdentifier: 
+  active: 1
+  type:
+    m_OverrideState: 1
+    m_Value: 0
+  intensity:
+    m_OverrideState: 1
+    m_Value: 0.12
+  response:
+    m_OverrideState: 1
+    m_Value: 0.8
+  texture:
+    m_OverrideState: 0
+    m_Value: {fileID: 0}
 --- !u!114 &-719119561873187420
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -114,13 +167,13 @@ MonoBehaviour:
     m_Value: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 0.1
+    m_Value: 0.3
   intensity:
     m_OverrideState: 1
-    m_Value: 1.8
+    m_Value: 1.3
   scatter:
     m_OverrideState: 1
-    m_Value: 0.603
+    m_Value: 0.75
   clamp:
     m_OverrideState: 1
     m_Value: 65472
@@ -161,6 +214,8 @@ MonoBehaviour:
   - {fileID: -5075696052046488139}
   - {fileID: -2193942223480458820}
   - {fileID: 6826261588825831684}
+  - {fileID: -789707832464008304}
+  - {fileID: -7621691840645095093}
 --- !u!114 &6826261588825831684
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -176,4 +231,4 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.05
+    m_Value: 0.025

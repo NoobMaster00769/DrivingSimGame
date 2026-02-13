@@ -4,50 +4,66 @@ using UnityEngine;
 public class CarFollowCamera : MonoBehaviour
 {
     public Transform target;
-    public PlayerDriveMetrics metrics;
 
-    [Header("Offsets")]
-    public Vector3 baseOffset = new Vector3(0f, 4f, -8f);
+    [Header("Framing")]
+    public Vector3 baseOffset = new Vector3(0f, 6.8f, -10f);
+    public float verticalBias = -3.5f;
 
-    [Header("Smoothing")]
-    public float positionSmooth = 6f;
-    public float rotationSmooth = 8f;
+    [Header("Weight")]
+    public float positionSmooth = 1.6f;
+    public float rotationSmooth = 1.8f;
 
     [Header("Look Ahead")]
-    public float lookAheadDistance = 10f;
+    public float lookAheadDistance = 22f;
+    public float lookAheadSmooth = 1.1f;
 
-    [Header("FOV")]
-    public float baseFOV = 65f;
-    public float maxFOV = 75f;
-    public float flowFOV = 60f;
+    [Header("Cosmic Drift")]
+    public float horizonTiltAmount = 0.4f;
+    public float horizonTiltSpeed = 0.015f;
+
+    [Header("Subtle Presence Breathing")]
+    public float presenceBreathAmount = 0.25f;
+    public float presenceBreathSpeed = 0.035f;
 
     Camera cam;
     Rigidbody rb;
 
+    float horizonTimer;
+    float breathTimer;
+
+    Vector3 smoothLookDir;
+
     void Start()
     {
         cam = GetComponent<Camera>();
+
         if (target)
             rb = target.GetComponent<Rigidbody>();
+
+        if (target)
+            smoothLookDir = target.forward;
+
+        cam.fieldOfView = 56f; // cinematic compression
     }
 
     void LateUpdate()
     {
-        if (!target || !rb) return;
+        if (!target) return;
 
-        Vector3 velocity = rb.velocity;
-        float speed = velocity.magnitude;
+        horizonTimer += Time.deltaTime * horizonTiltSpeed;
+        breathTimer += Time.deltaTime * presenceBreathSpeed;
 
-        Vector3 dynamicOffset =
-            baseOffset - new Vector3(0f, 0f, speed * 0.05f);
+        // -------------------------------
+        // POSITION (Closer but Elevated)
+        // -------------------------------
 
         Vector3 desiredPos =
-            target.TransformPoint(dynamicOffset);
+            target.TransformPoint(baseOffset);
 
-        float dreamFloat =
-            Mathf.Sin(Time.time * 0.3f) * 0.1f;
+        float breath =
+            Mathf.Sin(breathTimer) * presenceBreathAmount;
 
-        desiredPos += Vector3.up * dreamFloat;
+        desiredPos += target.forward * breath;
 
         transform.position = Vector3.Lerp(
             transform.position,
@@ -55,38 +71,48 @@ public class CarFollowCamera : MonoBehaviour
             Time.deltaTime * positionSmooth
         );
 
+        // -------------------------------
+        // LOOK AHEAD
+        // -------------------------------
+
+        Vector3 forwardDir =
+            rb && rb.velocity.sqrMagnitude > 0.1f
+            ? rb.velocity.normalized
+            : target.forward;
+
+        smoothLookDir = Vector3.Lerp(
+            smoothLookDir,
+            forwardDir,
+            Time.deltaTime * lookAheadSmooth
+        );
+
         Vector3 lookPoint =
             target.position +
-            velocity.normalized * lookAheadDistance;
+            smoothLookDir * lookAheadDistance;
 
-        Quaternion targetRot =
+        Quaternion baseRotation =
             Quaternion.LookRotation(
                 lookPoint - transform.position,
                 Vector3.up
             );
 
+        // -------------------------------
+        // Subtle Cosmic Horizon Drift
+        // -------------------------------
+
+        float tilt =
+            Mathf.Sin(horizonTimer) * horizonTiltAmount;
+
+        Quaternion roll =
+            Quaternion.AngleAxis(tilt, Vector3.forward);
+
+        Quaternion pitchBias =
+            Quaternion.AngleAxis(verticalBias, Vector3.right);
+
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
-            targetRot,
+            baseRotation * roll * pitchBias,
             Time.deltaTime * rotationSmooth
         );
-
-        UpdateFOV();
-    }
-
-    void UpdateFOV()
-    {
-        if (!metrics) return;
-
-        float targetFOV =
-            Mathf.Lerp(baseFOV, maxFOV, metrics.intensity * 0.7f);
-
-        targetFOV =
-            Mathf.Lerp(targetFOV, flowFOV, metrics.flow * 0.5f);
-
-        cam.fieldOfView =
-            Mathf.Lerp(cam.fieldOfView,
-                       targetFOV,
-                       Time.deltaTime * 2f);
     }
 }
