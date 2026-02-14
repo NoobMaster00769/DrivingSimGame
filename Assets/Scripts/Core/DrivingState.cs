@@ -134,11 +134,19 @@ public class DrivingState : VehicleState
             context.torqueCurve.Evaluate(rpmNorm) *
             context.input.Throttle;
 
+        float rawTorque =
+     engineTorque *
+     GetGearRatio() *
+     context.finalDriveRatio *
+     (1f - context.clutch);
+
         float driveTorque =
-            engineTorque *
-            GetGearRatio() *
-            context.finalDriveRatio *
-            (1f - context.clutch);
+            Mathf.Lerp(
+                context.colliders.RLWheel.motorTorque * 2f,
+                rawTorque,
+                Time.fixedDeltaTime * 4f
+            );
+
 
         SetDriveTorque(driveTorque);
     }
@@ -183,14 +191,24 @@ public class DrivingState : VehicleState
     void ApplySteering()
     {
         float speed = context.rb.velocity.magnitude;
-        float target = context.input.Steering *
-            Mathf.Lerp(context.maxSteerAngle,
-                       context.maxSteerAngle * 0.35f,
-                       speed / context.maxSpeed);
+        float speedFactor = Mathf.Clamp01(speed / context.maxSpeed);
 
-        context.colliders.FLWheel.steerAngle = target;
-        context.colliders.FRWheel.steerAngle = target;
+        float reducedAngle =
+            Mathf.Lerp(context.maxSteerAngle,
+                       context.maxSteerAngle * 0.45f,
+                       speedFactor);
+
+        float smoothSteer =
+            Mathf.Lerp(
+                context.colliders.FLWheel.steerAngle,
+                context.input.Steering * reducedAngle,
+                Time.fixedDeltaTime * context.steerResponse
+            );
+
+        context.colliders.FLWheel.steerAngle = smoothSteer;
+        context.colliders.FRWheel.steerAngle = smoothSteer;
     }
+
 
     void ApplyBrakes()
     {

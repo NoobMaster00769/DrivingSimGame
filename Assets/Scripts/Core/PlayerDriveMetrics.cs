@@ -28,42 +28,33 @@ public class PlayerDriveMetrics : MonoBehaviour
         float throttle = context.input.Throttle;
         float speed = rb.velocity.magnitude;
 
-        // -------------------------
         // INTENSITY
-        // -------------------------
         float rpmNorm = context.engineRPM / context.maxRPM;
         float speedNorm = speed / context.maxSpeed;
 
         intensity = Mathf.Clamp01(
-            rpmNorm * 0.6f +
-            speedNorm * 0.4f
+            rpmNorm * 0.5f +
+            speedNorm * 0.5f
         );
 
-        // -------------------------
-        // CONTROL QUALITY
-        // -------------------------
+        // CONTROL QUALITY (less harsh)
         float lateralVel =
             Mathf.Abs(Vector3.Dot(rb.velocity, transform.right));
 
-        float drift = Mathf.Clamp01(lateralVel / 12f);
+        float drift = Mathf.Clamp01(lateralVel / 15f); // was 12
 
         controlQuality =
             1f - Mathf.Clamp01(
-                Mathf.Abs(steering) * 0.4f +
-                drift * 0.6f
+                Mathf.Abs(steering) * 0.35f +
+                drift * 0.65f
             );
 
-        // -------------------------
-        // RHYTHM DETECTION
-        // -------------------------
+        // RHYTHM
         float steeringDelta =
             Mathf.Abs(steering - steeringHistory);
 
-        float throttleDelta =
-            Mathf.Abs(throttle - throttleHistory);
-
         float smoothOscillation =
-            1f - Mathf.Clamp01(steeringDelta * 5f);
+            1f - Mathf.Clamp01(steeringDelta * 4f);
 
         rhythmAccumulator =
             Mathf.Lerp(rhythmAccumulator,
@@ -75,12 +66,10 @@ public class PlayerDriveMetrics : MonoBehaviour
         steeringHistory = steering;
         throttleHistory = throttle;
 
-        // -------------------------
-        // FLOW DETECTION
-        // -------------------------
-        if (controlQuality > 0.8f &&
-            rhythm > 0.7f &&
-            intensity < 0.7f)
+        // FLOW — easier entry, slower decay
+        if (controlQuality > 0.7f &&
+            rhythm > 0.6f &&
+            intensity < 0.85f)
         {
             flowTimer += Time.fixedDeltaTime;
         }
@@ -88,9 +77,9 @@ public class PlayerDriveMetrics : MonoBehaviour
         {
             flowTimer =
                 Mathf.Max(0f,
-                          flowTimer - Time.fixedDeltaTime * 2f);
+                          flowTimer - Time.fixedDeltaTime * 1.2f);
         }
 
-        flow = Mathf.Clamp01(flowTimer / 5f);
+        flow = Mathf.Clamp01(flowTimer / 3.5f);  // was /5
     }
 }

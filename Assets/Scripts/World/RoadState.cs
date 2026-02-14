@@ -14,16 +14,20 @@ public class RoadState : MonoBehaviour
     [Range(0, 1)] public float banking;
     [Range(0, 1)] public float elevationEnergy;
 
-    float timeAccumulator;
+    [HideInInspector] public float curvatureMultiplier = 1f;
+    [HideInInspector] public float widthMultiplier = 1f;
+    [HideInInspector] public float bankingMultiplier = 1f;
 
-    // Section system
     float sectionTimer;
     float sectionDuration;
     int sectionType;
-    // 0 = Wide Flow
-    // 1 = S Curves
-    // 2 = Tight Technical
-    // 3 = High Speed Run
+
+    float sectionTime;              // resets per section
+    float blendSpeed = 1.5f;
+
+    float targetCurvature;
+    float targetWidth;
+    float targetBanking;
 
     void Start()
     {
@@ -34,8 +38,8 @@ public class RoadState : MonoBehaviour
     {
         if (!player) return;
 
-        timeAccumulator += Time.deltaTime;
         sectionTimer += Time.deltaTime;
+        sectionTime += Time.deltaTime;
 
         if (sectionTimer > sectionDuration)
             PickNewSection();
@@ -46,14 +50,15 @@ public class RoadState : MonoBehaviour
     void PickNewSection()
     {
         sectionTimer = 0f;
-        sectionDuration = Random.Range(7f, 16f);
+        sectionTime = 0f;
+        sectionDuration = Random.Range(8f, 18f);
 
         sectionType = Random.Range(0, 4);
     }
 
     void UpdateGeometry()
     {
-        float t = timeAccumulator;
+        float t = sectionTime;
 
         switch (sectionType)
         {
@@ -61,82 +66,72 @@ public class RoadState : MonoBehaviour
             // 0 — WIDE FLOWING HIGHWAY
             // -----------------------------
             case 0:
-                curvature =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 0.5f) * 0.2f
-                    );
+                targetCurvature =
+                    0.5f + Mathf.Sin(t * 0.5f) * 0.2f;
 
-                width = 0.8f;
+                targetWidth = 0.8f;
 
-                banking =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 0.6f) * 0.15f
-                    );
+                targetBanking =
+                    0.5f + Mathf.Sin(t * 0.6f) * 0.15f;
                 break;
 
             // -----------------------------
             // 1 — RHYTHMIC S-CURVES
             // -----------------------------
             case 1:
-                curvature =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 1.2f) * 0.35f
-                    );
+                targetCurvature =
+                    0.5f + Mathf.Sin(t * 1.2f) * 0.35f;
 
-                width = 0.65f;
+                targetWidth = 0.65f;
 
-                banking =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 1.2f) * 0.3f
-                    );
+                targetBanking =
+                    0.5f + Mathf.Sin(t * 1.2f) * 0.3f;
                 break;
 
             // -----------------------------
             // 2 — TIGHT TECHNICAL
             // -----------------------------
             case 2:
-                curvature =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.PerlinNoise(t * 1.8f, 1f) * 0.6f
-                    );
+                targetCurvature =
+                    0.5f + Mathf.PerlinNoise(t * 1.8f, 1f) * 0.6f;
 
-                width = 0.55f;
+                targetWidth = 0.55f;
 
-                banking =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.PerlinNoise(t * 1.5f, 2f) * 0.4f
-                    );
+                targetBanking =
+                    0.5f + Mathf.PerlinNoise(t * 1.5f, 2f) * 0.4f;
                 break;
 
             // -----------------------------
             // 3 — HIGH SPEED STRAIGHT
             // -----------------------------
             case 3:
-                curvature =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 0.3f) * 0.1f
-                    );
+                targetCurvature =
+                    0.5f + Mathf.Sin(t * 0.3f) * 0.1f;
 
-                width = 0.9f;
+                targetWidth = 0.9f;
 
-                banking =
-                    Mathf.Clamp01(
-                        0.5f +
-                        Mathf.Sin(t * 0.4f) * 0.1f
-                    );
+                targetBanking =
+                    0.5f + Mathf.Sin(t * 0.4f) * 0.1f;
                 break;
         }
 
-        // Elevation now purely aesthetic
+        // Smooth morphing instead of snapping
+        curvature = Mathf.Lerp(curvature, targetCurvature, Time.deltaTime * blendSpeed);
+        width = Mathf.Lerp(width, targetWidth, Time.deltaTime * blendSpeed);
+        banking = Mathf.Lerp(banking, targetBanking, Time.deltaTime * blendSpeed);
+
+        // Elevation purely aesthetic
         elevationEnergy =
             0.5f +
             Mathf.Sin(Time.time * 0.15f) * 0.25f;
+
+        // Apply multipliers
+        curvature *= curvatureMultiplier;
+        width *= widthMultiplier;
+        banking *= bankingMultiplier;
+
+        curvature = Mathf.Clamp01(curvature);
+        width = Mathf.Clamp01(width);
+        banking = Mathf.Clamp01(banking);
     }
 }
