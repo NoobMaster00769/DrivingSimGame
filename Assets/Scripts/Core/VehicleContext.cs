@@ -4,20 +4,13 @@ public class VehicleContext : MonoBehaviour
 {
     [Header("Differential (LSD)")]
     [Range(0f, 1f)]
-    public float lsdStrength = 0.6f;
-    // 0 = open diff, 1 = fully locked
+    public float lsdStrength = 0.4f;   // reduced for smoother exits
+    public float maxLsdBias = 2.0f;    // less snap torque bias
 
-    public float maxLsdBias = 3.0f;
-    // Maximum torque bias ratio
-  
     [Header("Traction Control")]
-    public bool tractionControlEnabled = true;
-
-    [Tooltip("Allowed slip before TC kicks in")]
-    public float slipThreshold = 0.15f;
-
-    [Tooltip("How aggressively TC cuts torque")]
-    public float tcStrength = 6f;
+    public bool tractionControlEnabled = false; // disable for smooth flow
+    public float slipThreshold = 0.2f;
+    public float tcStrength = 4f;
 
     [Header("References")]
     public Rigidbody rb;
@@ -34,55 +27,53 @@ public class VehicleContext : MonoBehaviour
 
     // ---------------- ENGINE ----------------
     [Header("Engine")]
-    public float maxMotorTorque = 1600f;
-    public float maxRPM = 6500f;
+    public float maxMotorTorque = 1350f;   // smoother power
+    public float maxRPM = 6200f;
     public float idleRPM = 900f;
-    public AnimationCurve torqueCurve;
+    public AnimationCurve torqueCurve;     // not heavily used
 
     // ---------------- CLUTCH ----------------
     [Header("Clutch")]
-    [Range(0f, 1f)] public float clutch; // 0 = engaged, 1 = disengaged
+    [Range(0f, 1f)] public float clutch;
     public float clutchEngageSpeed = 4f;
 
     // ---------------- GEARBOX ----------------
     [Header("Gearbox")]
     public float reverseGearRatio = -3.0f;
-    public float[] forwardGearRatios = { 3.2f, 2.1f, 1.5f, 1.1f, 0.9f };
-    public float finalDriveRatio = 3.4f;
+    public float[] forwardGearRatios = { 2.8f, 2.0f, 1.5f, 1.2f, 1.0f };
+    public float finalDriveRatio = 3.6f;
 
-    [Tooltip("-1 = Reverse, 0 = Neutral, 1+ = Forward gears")]
     public int currentGear = 0;
 
     // ---------------- RPM RULES ----------------
     [Header("RPM Rules")]
     public float stallRPM = 700f;
-    public float optimalUpshiftRPM = 5200f;
+    public float optimalUpshiftRPM = 5400f;
     public float optimalDownshiftRPM = 1800f;
 
     // ---------------- STEERING ----------------
     [Header("Steering")]
-    public float maxSteerAngle = 30f;
-    public float steerResponse = 6f;
+    public float maxSteerAngle = 32f;
+    public float steerResponse = 7f;
 
     // ---------------- BRAKES ----------------
     [Header("Brakes")]
-    public float brakeForce = 3000f;
+    public float brakeForce = 2600f;
 
     // ---------------- FRICTION ----------------
     [Header("Friction")]
-    public float rearSideFriction = 1.4f;
-    public float rearHandbrakeFriction = 0.6f;
+    public float rearSideFriction = 1.3f;
+    public float rearHandbrakeFriction = 0.75f;
 
     // ---------------- SPEED ----------------
     [Header("Speed")]
-    public float maxSpeed = 45f;
+    public float maxSpeed = 42f;
 
-    // ---------------- RUNTIME ----------------
     [HideInInspector] public float engineRPM;
     [HideInInspector] public bool engineStalled;
 
     private void Start()
     {
-        rb.centerOfMass = new Vector3(0f, -0.45f, 0f);
+        rb.centerOfMass = new Vector3(0f, -0.55f, 0f); // more stable
     }
 }
