@@ -16,6 +16,34 @@ public class DrivingState : VehicleState
         ApplyBrakes();
         ApplyFriction();
         UpdateWheelVisuals();
+        AlignToGroundNormal();
+
+    }
+    void AlignToGroundNormal()
+    {
+        RaycastHit hit;
+
+        if (Physics.Raycast(
+            context.rb.position,
+            Vector3.down,
+            out hit,
+            3f))
+        {
+            Vector3 groundNormal = hit.normal;
+
+            Quaternion targetRotation =
+                Quaternion.FromToRotation(
+                    context.transform.up,
+                    groundNormal
+                ) * context.transform.rotation;
+
+            context.rb.MoveRotation(
+                Quaternion.Slerp(
+                    context.rb.rotation,
+                    targetRotation,
+                    Time.fixedDeltaTime * 6f
+                ));
+        }
     }
 
     // ===================== CLUTCH =====================
@@ -140,12 +168,17 @@ public class DrivingState : VehicleState
      context.finalDriveRatio *
      (1f - context.clutch);
 
+        float currentTorque =
+      (context.colliders.RLWheel.motorTorque +
+       context.colliders.RRWheel.motorTorque) * 0.5f;
+
         float driveTorque =
             Mathf.Lerp(
-                context.colliders.RLWheel.motorTorque * 2f,
+                currentTorque,
                 rawTorque,
                 Time.fixedDeltaTime * 4f
             );
+
 
 
         SetDriveTorque(driveTorque);
@@ -222,11 +255,26 @@ public class DrivingState : VehicleState
     void ApplyFriction()
     {
         bool hb = context.input.Brake > 0.1f;
-        var f = context.colliders.RRWheel.sidewaysFriction;
-        f.stiffness = hb ? context.rearHandbrakeFriction : context.rearSideFriction;
-        context.colliders.RRWheel.sidewaysFriction = f;
-        context.colliders.RLWheel.sidewaysFriction = f;
+
+        float stiffness =
+            hb ? context.rearHandbrakeFriction
+               : context.rearSideFriction;
+
+        ApplyWheelFriction(context.colliders.RLWheel, stiffness);
+        ApplyWheelFriction(context.colliders.RRWheel, stiffness);
+
+        // Slight front stabilization to prevent drift bias
+        ApplyWheelFriction(context.colliders.FLWheel, 1.2f);
+        ApplyWheelFriction(context.colliders.FRWheel, 1.2f);
     }
+
+    void ApplyWheelFriction(WheelCollider wheel, float stiffness)
+    {
+        WheelFrictionCurve f = wheel.sidewaysFriction;
+        f.stiffness = stiffness;
+        wheel.sidewaysFriction = f;
+    }
+
 
     void UpdateWheelVisuals()
     {
