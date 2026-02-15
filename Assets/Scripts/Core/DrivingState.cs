@@ -10,7 +10,7 @@ public class DrivingState : VehicleState
         UpdateClutch();
         HandleGearShift();
         SimulateEngineRPM();
-        ApplyEngineForces();
+        ApplyDrive();
         ApplyEngineBraking();
         ApplySteering();
         ApplyBrakes();
@@ -21,72 +21,90 @@ public class DrivingState : VehicleState
 
     void AlignToGroundNormal()
     {
-        RaycastHit hit;
-
-        if (Physics.Raycast(context.rb.position, Vector3.down, out hit, 3f))
+        if (Physics.Raycast(context.rb.position, Vector3.down, out RaycastHit hit, 3f))
         {
             Quaternion targetRotation =
-                Quaternion.FromToRotation(
-                    context.transform.up,
-                    hit.normal
-                ) * context.transform.rotation;
+                Quaternion.FromToRotation(context.transform.up, hit.normal)
+                * context.transform.rotation;
 
             context.rb.MoveRotation(
                 Quaternion.Slerp(
                     context.rb.rotation,
                     targetRotation,
-                    Time.fixedDeltaTime * 4f   // softer alignment
-                ));
+                    Time.fixedDeltaTime * 4f));
         }
     }
+
+    // ==============================
+    // CLUTCH
+    // ==============================
 
     void UpdateClutch()
     {
         context.clutch = context.input.Clutch;
     }
 
+    // ==============================
+    // GEAR SHIFT
+    // ==============================
+
     void HandleGearShift()
     {
         if (context.clutch < 0.85f) return;
 
-        float speed = context.rb.velocity.magnitude;
-
         if (context.input.ShiftUp &&
             context.currentGear < context.forwardGearRatios.Length)
+        {
             context.currentGear++;
+        }
 
         if (context.input.ShiftDown &&
-            context.currentGear > 1)
+            context.currentGear > 0)
+        {
             context.currentGear--;
+        }
 
         context.input.ConsumeShifts();
     }
 
+    // ==============================
+    // RPM SIMULATION (Mechanical)
+    // ==============================
+
     void SimulateEngineRPM()
     {
-        float wheelRPM = GetWheelRPM();
-        float ratio = Mathf.Abs(GetGearRatio());
-
-        if (context.currentGear == 0 || context.clutch > 0.95f)
+        // Neutral
+        if (context.currentGear == 0)
         {
             context.engineRPM = Mathf.Lerp(
                 context.engineRPM,
-                context.idleRPM + context.input.Throttle * (context.maxRPM - context.idleRPM),
-                Time.fixedDeltaTime * 4f
-            );
+                context.idleRPM +
+                context.input.Throttle *
+                (context.maxRPM - context.idleRPM),
+                Time.fixedDeltaTime * 6f);
+
             return;
         }
 
-        float targetRPM = wheelRPM * ratio * context.finalDriveRatio;
+        float wheelRPM = GetWheelRPM();
+        float gearRatio = Mathf.Abs(GetGearRatio());
 
-        context.engineRPM = Mathf.Lerp(
-            context.engineRPM,
-            Mathf.Max(context.idleRPM, targetRPM),
-            Time.fixedDeltaTime * 6f
-        );
+        float targetRPM =
+            wheelRPM *
+            gearRatio *
+            context.finalDriveRatio;
+
+        context.engineRPM = Mathf.Clamp(
+            targetRPM,
+            context.idleRPM,
+            context.maxRPM);
     }
 
-    void ApplyEngineForces()
+    // ==============================
+    // DRIVE (FUN + CLEAN)
+    // ==============================
+
+    void ApplyDrive()
     {
         if (context.currentGear == 0)
         {
@@ -96,55 +114,56 @@ public class DrivingState : VehicleState
 
         float rpmNorm = context.engineRPM / context.maxRPM;
 
-        // Flat torque band with gentle top-end drop
-        float torqueFactor = 1f;
+        // Natural resistance near redline
+        float redlineResistance = 1f;
 
-        if (rpmNorm < 0.2f)
-            torqueFactor = Mathf.Lerp(0.6f, 1f, rpmNorm / 0.2f);
-        else if (rpmNorm > 0.9f)
-            torqueFactor = Mathf.Lerp(1f, 0.85f, (rpmNorm - 0.9f) / 0.1f);
+        if (rpmNorm > 0.92f)
+        {
+            float over = (rpmNorm - 0.92f) / 0.08f;
+            redlineResistance = Mathf.Lerp(1f, 0f, over);
+        }
 
         float engineTorque =
             context.maxMotorTorque *
-            torqueFactor *
-            context.input.Throttle;
-
-        float rawTorque =
-            engineTorque *
-            GetGearRatio() *
-            context.finalDriveRatio *
-            (1f - context.clutch);
-
-        float currentTorque =
-            (context.colliders.RLWheel.motorTorque +
-             context.colliders.RRWheel.motorTorque) * 0.5f;
+            context.input.Throttle *
+            redlineResistance;
 
         float driveTorque =
-            Mathf.Lerp(currentTorque, rawTorque, Time.fixedDeltaTime * 3f);
+            engineTorque *
+            GetGearRatio() *
+            context.finalDriveRatio;
 
         SetDriveTorque(driveTorque);
     }
 
+    // ==============================
+    // ENGINE BRAKING
+    // ==============================
+
     void ApplyEngineBraking()
     {
-        if (context.currentGear <= 0 || context.clutch > 0.2f) return;
+        if (context.currentGear <= 0) return;
+
+        if (context.input.Throttle > 0.1f) return;
 
         float brake =
             context.brakeForce *
-            Mathf.Abs(GetGearRatio()) *
-            (context.engineRPM / context.maxRPM) *
-            0.05f;   // reduced braking
+            0.05f *
+            (context.engineRPM / context.maxRPM);
 
         context.colliders.RLWheel.brakeTorque += brake;
         context.colliders.RRWheel.brakeTorque += brake;
     }
 
+    // ==============================
+    // HELPERS
+    // ==============================
+
     float GetWheelRPM()
     {
         return Mathf.Abs(
             (context.colliders.RLWheel.rpm +
-             context.colliders.RRWheel.rpm) * 0.5f
-        );
+             context.colliders.RRWheel.rpm) * 0.5f);
     }
 
     float GetGearRatio()
@@ -152,7 +171,7 @@ public class DrivingState : VehicleState
         if (context.currentGear > 0)
             return context.forwardGearRatios[context.currentGear - 1];
 
-        return 0f;
+        return context.reverseGearRatio;
     }
 
     void SetDriveTorque(float totalTorque)
@@ -160,6 +179,10 @@ public class DrivingState : VehicleState
         context.colliders.RLWheel.motorTorque = totalTorque * 0.5f;
         context.colliders.RRWheel.motorTorque = totalTorque * 0.5f;
     }
+
+    // ==============================
+    // STEERING
+    // ==============================
 
     void ApplySteering()
     {
@@ -175,8 +198,7 @@ public class DrivingState : VehicleState
             Mathf.Lerp(
                 context.colliders.FLWheel.steerAngle,
                 context.input.Steering * reducedAngle,
-                Time.fixedDeltaTime * context.steerResponse
-            );
+                Time.fixedDeltaTime * context.steerResponse);
 
         context.colliders.FLWheel.steerAngle = smoothSteer;
         context.colliders.FRWheel.steerAngle = smoothSteer;
@@ -194,12 +216,8 @@ public class DrivingState : VehicleState
 
     void ApplyFriction()
     {
-        float rearStiff = context.rearSideFriction;
-
-        ApplyWheelFriction(context.colliders.RLWheel, rearStiff);
-        ApplyWheelFriction(context.colliders.RRWheel, rearStiff);
-
-        // Balanced front friction
+        ApplyWheelFriction(context.colliders.RLWheel, context.rearSideFriction);
+        ApplyWheelFriction(context.colliders.RRWheel, context.rearSideFriction);
         ApplyWheelFriction(context.colliders.FLWheel, 1.35f);
         ApplyWheelFriction(context.colliders.FRWheel, 1.35f);
     }

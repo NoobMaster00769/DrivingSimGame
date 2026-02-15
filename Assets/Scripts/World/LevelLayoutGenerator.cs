@@ -12,6 +12,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     public int chunksAhead = 20;
     public int chunksBehind = 6;
 
+    [Header("Chunk Overlap")]
+    public float chunkOverlap = 2f;
+
     [Header("Section Settings")]
     public int sectionSize = 18;
 
@@ -28,14 +31,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Header("Boundary FX")]
     public GameObject boundaryParticlePrefab;
     public float boundaryOffsetY = 0.2f;
-    public float boundaryHeight = 2f;
+    public float boundaryHeight = 4.5f;
     public float boundaryThickness = 0.5f;
-
-    [Header("Reactivity")]
-    public float pulseSpeed = 2f;
-    public float pulseAmount = 0.15f;
-    public float speedInfluence = 0.05f;
-    public float curvatureInfluence = 500f;
+    public float boundaryOutwardPadding = 0.2f;
 
     private Vector3 currentPosition;
     private Vector3 currentForward;
@@ -45,14 +43,15 @@ public class LevelLayoutGenerator : MonoBehaviour
     private float sectionWidth;
     private float sectionBanking;
 
-    private float turnMomentum; // NEW
-
+    private float turnMomentum;
     private int chunksInCurrentSection;
 
     private List<GameObject> roadChunks = new();
     private List<GameObject> waterChunks = new();
     private List<GameObject> starRoadChunks = new();
     private List<GameObject> boundaryChunks = new();
+
+    private List<Vector3> roadCenters = new(); // 🔥 NEW
 
     void Start()
     {
@@ -103,31 +102,39 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         SpawnWaterGrid(chunk.transform.position, roadRotation);
         SpawnStarRoadFX(chunk);
-        SpawnBoundaryFX(chunk);
 
         roadChunks.Add(chunk);
+        roadCenters.Add(chunk.transform.position);
+
+        // 🔥 CONTINUOUS BOUNDARY CREATION
+        if (roadCenters.Count >= 2)
+        {
+            CreateBoundarySegment(
+                roadCenters[^2],
+                roadCenters[^1],
+                chunk.transform.localScale.x
+            );
+        }
 
         Transform end = chunk.transform.Find("End");
 
         if (end != null)
         {
-            currentPosition = end.position;
+            currentPosition =
+                end.position - currentForward * chunkOverlap;
+
             currentForward = end.forward;
         }
         else
         {
-            currentPosition += currentForward * chunkLength;
+            currentPosition += currentForward * (chunkLength - chunkOverlap);
         }
 
-        // -----------------------------
-        // IMPROVED CURVE MOMENTUM
-        // -----------------------------
-
         smoothCurvature = Mathf.Lerp(
-    smoothCurvature,
-    sectionCurvature,
-    0.1f
-);
+            smoothCurvature,
+            sectionCurvature,
+            0.1f
+        );
 
         float targetTurn =
             Mathf.Lerp(-4.5f, 4.5f, smoothCurvature);
@@ -160,6 +167,90 @@ public class LevelLayoutGenerator : MonoBehaviour
         chunk.transform.Rotate(Vector3.forward, bank, Space.Self);
     }
 
+    // =========================================
+    // 🔥 TRUE CONTINUOUS CURVED BOUNDARY SYSTEM
+    // =========================================
+
+    void CreateBoundarySegment(Vector3 start, Vector3 end, float widthScale)
+    {
+        Vector3 dir = (end - start).normalized;
+        float length = Vector3.Distance(start, end);
+
+        Vector3 mid = (start + end) * 0.5f;
+
+        float halfRoadWidth = widthScale * 5f; // base mesh width assumed 10
+
+        CreateOneSide(mid, dir, length, -1f, halfRoadWidth);
+        CreateOneSide(mid, dir, length, 1f, halfRoadWidth);
+    }
+
+    void CreateOneSide(
+        Vector3 mid,
+        Vector3 forward,
+        float length,
+        float sideSign,
+        float halfWidth)
+    {
+        Vector3 right =
+            Vector3.Cross(Vector3.up, forward).normalized;
+
+        Vector3 pos =
+            mid +
+            right * sideSign *
+            (halfWidth + boundaryOutwardPadding) +
+            Vector3.up *
+            (boundaryHeight * 0.5f + boundaryOffsetY);
+
+        Quaternion rot =
+            Quaternion.LookRotation(forward, Vector3.up);
+
+        // COLLIDER
+        GameObject wall = new("BoundaryCollider");
+        wall.transform.position = pos;
+        wall.transform.rotation = rot;
+
+        BoxCollider col = wall.AddComponent<BoxCollider>();
+        col.size = new Vector3(
+            boundaryThickness,
+            boundaryHeight,
+            length + chunkOverlap
+        );
+
+        boundaryChunks.Add(wall);
+
+        // PARTICLE VISUAL
+        if (boundaryParticlePrefab)
+        {
+            GameObject fx =
+                Instantiate(boundaryParticlePrefab,
+                            pos,
+                            rot);
+
+            ParticleSystem ps =
+                fx.GetComponent<ParticleSystem>();
+
+            if (ps)
+            {
+                var shape = ps.shape;
+                shape.shapeType =
+                    ParticleSystemShapeType.Box;
+
+                shape.scale =
+                    new Vector3(
+                        boundaryThickness,
+                        boundaryHeight,
+                        length + chunkOverlap
+                    );
+            }
+
+            boundaryChunks.Add(fx);
+        }
+    }
+
+    // =========================================
+    // STAR ROAD (UNCHANGED)
+    // =========================================
+
     void SpawnStarRoadFX(GameObject chunk)
     {
         if (!starRoadPrefab) return;
@@ -178,95 +269,70 @@ public class LevelLayoutGenerator : MonoBehaviour
         var emission = ps.emission;
 
         float baseWidth = 10f;
-        float scaledWidth = baseWidth * chunk.transform.localScale.x;
+        float scaledWidth =
+            baseWidth * chunk.transform.localScale.x;
 
         shape.shapeType = ParticleSystemShapeType.Box;
         shape.scale = new Vector3(
             scaledWidth,
             0.05f,
-            chunkLength
+            chunkLength + chunkOverlap
         );
 
-        main.simulationSpace = ParticleSystemSimulationSpace.Local;
+        main.simulationSpace =
+            ParticleSystemSimulationSpace.Local;
         main.startSpeed = 0f;
         main.startSize = 0.12f;
-        main.startLifetime = 6f;
-        main.maxParticles = 20000;
+        main.startLifetime = 8f;
+        main.maxParticles = 25000;
 
-        emission.rateOverTime = 1200f * chunk.transform.localScale.x;
+        emission.rateOverTime =
+            1500f * chunk.transform.localScale.x;
 
         starRoadChunks.Add(fx);
     }
 
-    void SpawnBoundaryFX(GameObject chunk)
-    {
-        if (!boundaryParticlePrefab) return;
+    // =========================================
+    // WATER (UNCHANGED)
+    // =========================================
 
-        Transform boundaries = chunk.transform.Find("Boundaries");
-        if (!boundaries) return;
-
-        Transform left = boundaries.Find("Left");
-        Transform right = boundaries.Find("Right");
-
-        if (!left || !right) return;
-
-        CreateBoundary(chunk, left.localPosition);
-        CreateBoundary(chunk, right.localPosition);
-    }
-
-    void CreateBoundary(GameObject chunk, Vector3 anchorLocalPos)
-    {
-        GameObject fx = Instantiate(boundaryParticlePrefab);
-        fx.transform.parent = chunk.transform;
-        fx.transform.localPosition =
-            anchorLocalPos + Vector3.up * boundaryOffsetY;
-        fx.transform.localRotation = Quaternion.identity;
-
-        boundaryChunks.Add(fx);
-
-        GameObject wall = new("BoundaryCollider");
-        wall.transform.parent = chunk.transform;
-        wall.transform.localPosition =
-            anchorLocalPos + Vector3.up * (boundaryHeight * 0.5f);
-        wall.transform.localRotation = Quaternion.identity;
-
-        BoxCollider collider = wall.AddComponent<BoxCollider>();
-        collider.size = new Vector3(
-            boundaryThickness,
-            boundaryHeight,
-            chunkLength
-        );
-
-        boundaryChunks.Add(wall);
-    }
-
-    void SpawnWaterGrid(Vector3 basePosition, Quaternion roadRotation)
+    void SpawnWaterGrid(Vector3 basePosition,
+                        Quaternion roadRotation)
     {
         if (!waterPrefab) return;
 
         Quaternion waterRotation =
-            Quaternion.LookRotation(currentForward, Vector3.up);
+            Quaternion.LookRotation(currentForward,
+                                    Vector3.up);
 
         Vector3 centerPos =
             basePosition + Vector3.up * waterOffsetY;
 
         SpawnWaterSlab(centerPos, waterRotation);
 
-        Vector3 rightDir = waterRotation * Vector3.right;
+        Vector3 rightDir =
+            waterRotation * Vector3.right;
 
         for (int i = 1; i <= sideWaterCount; i++)
         {
-            Vector3 offset = rightDir * waterWidth * i;
+            Vector3 offset =
+                rightDir * waterWidth * i;
 
-            SpawnWaterSlab(centerPos + offset, waterRotation);
-            SpawnWaterSlab(centerPos - offset, waterRotation);
+            SpawnWaterSlab(centerPos + offset,
+                           waterRotation);
+
+            SpawnWaterSlab(centerPos - offset,
+                           waterRotation);
         }
     }
 
-    void SpawnWaterSlab(Vector3 position, Quaternion rotation)
+    void SpawnWaterSlab(Vector3 position,
+                        Quaternion rotation)
     {
         GameObject water =
-            Instantiate(waterPrefab, position, rotation);
+            Instantiate(waterPrefab,
+                        position,
+                        rotation);
 
         water.transform.localScale =
             new Vector3(waterWidth, 1f, chunkLength);
@@ -276,13 +342,15 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     void Cleanup()
     {
-        if (roadChunks.Count <= chunksAhead + chunksBehind)
+        if (roadChunks.Count <=
+            chunksAhead + chunksBehind)
             return;
 
         GameObject oldestRoad = roadChunks[0];
 
         float distance =
-            Vector3.Distance(player.position, oldestRoad.transform.position);
+            Vector3.Distance(player.position,
+                             oldestRoad.transform.position);
 
         if (distance > chunkLength * chunksBehind)
         {

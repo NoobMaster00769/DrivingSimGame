@@ -362,14 +362,34 @@ MonoBehaviour:
   skyDistance: 1000
   skyHeight: 300
   arcStarCount: 60
+  arcLayers: 2
   arcRadius: 500
   arcAngle: 110
+  arcVerticalCurve: 40
+  arcLayerDepthSpacing: 40
+  arcHorizontalOffset: 900
+  arcVerticalOffset: 100
+  arcScaleMultiplier: 0.75
+  baseArcThickness: 1
+  maxArcThickness: 1.8
+  glowLerpSpeed: 5
+  redlineThreshold: 0.92
+  rpmShimmerIntensity: 0.15
+  rpmShimmerSpeed: 20
+  hazeAlpha: 0.08
+  hazeRadiusMultiplier: 1.08
+  glyphHeightOffset: 100
+  glyphHorizontalOffset: 500
+  glyphScaleFactor: 0.75
+  glyphRotationSpeed: 40
+  glyphShimmerIntensity: 10
+  glyphShimmerDuration: 0.6
   starPrefab: {fileID: 1809802460567072781, guid: 779c0aaee4df4644d8b2578c16179360, type: 3}
-  lineMaterial: {fileID: 0}
-  nebulaPrefab: {fileID: 0}
-  glowSpeed: 4
-  driftSpeed: 0.1
-  driftAmount: 8
+  lineMaterial: {fileID: 2100000, guid: 5bc49d1248a777749a0f31b459d5103c, type: 2}
+  rippleSpeed: 1.5
+  rippleWidth: 0.08
+  rippleBrightness: 1.5
+  rippleThicknessBoost: 0.4
 --- !u!4 &712967959
 Transform:
   m_ObjectHideFlags: 0
@@ -5369,7 +5389,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: maxRPM
-      value: 6200
+      value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: idleRPM
@@ -5377,7 +5397,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: maxSpeed
-      value: 42
+      value: 32
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: brakeForce
@@ -5385,11 +5405,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: maxSteerAngle
-      value: 32
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: steerResponse
-      value: 7
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: maxMotorTorque
@@ -5397,7 +5417,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: finalDriveRatio
-      value: 3.6
+      value: 5.2
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: rearSideFriction
@@ -5421,15 +5441,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: forwardGearRatios.Array.data[0]
-      value: 2.8
+      value: 3.2
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: forwardGearRatios.Array.data[1]
-      value: 2
+      value: 2.2
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: forwardGearRatios.Array.data[2]
-      value: 1.5
+      value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 4181710319929275252, guid: 66d7b594fad7f5145879ae18e095bb57, type: 3}
       propertyPath: forwardGearRatios.Array.data[3]

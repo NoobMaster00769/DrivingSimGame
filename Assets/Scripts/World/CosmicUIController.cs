@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CosmicUIController : MonoBehaviour
@@ -11,35 +12,67 @@ public class CosmicUIController : MonoBehaviour
     public float skyDistance = 1000f;
     public float skyHeight = 300f;
 
-    [Header("Arc Settings")]
-    public int arcStarCount = 60;
-    public float arcRadius = 180f;
-    public float arcAngle = 80f;
-    public float arcThickness = 12f;     // subtle vertical spread
+    [Header("Arc Layout")]
+    public int arcStarCount = 80;
+    public int arcLayers = 3;
+    public float arcRadius = 220f;
+    public float arcAngle = 100f;
+    public float arcVerticalCurve = 50f;
+    public float arcLayerDepthSpacing = 40f;
+
+    [Header("Arc Positioning (Sky Illusion)")]
+    public float arcHorizontalOffset = -150f;
+    public float arcVerticalOffset = 60f;
+    public float arcScaleMultiplier = 0.75f;
+
+    [Header("Arc Speed Behaviour")]
+    public float baseArcThickness = 1f;
+    public float maxArcThickness = 1.6f;
+    public float glowLerpSpeed = 5f;
+    public float redlineThreshold = 0.92f;
+    public float rpmShimmerIntensity = 0.15f;
+    public float rpmShimmerSpeed = 20f;
+
+    [Header("Arc Volumetric Haze")]
+    public float hazeAlpha = 0.08f;
+    public float hazeRadiusMultiplier = 1.08f;
+
+    [Header("Glyph Settings")]
+    public float glyphHeightOffset = 90f;
+    public float glyphHorizontalOffset = 120f;
+    public float glyphScaleFactor = 0.6f;
+    public float glyphRotationSpeed = 20f;
+    public float glyphShimmerIntensity = 2f;
+    public float glyphShimmerDuration = 0.4f;
 
     [Header("Visual")]
     public GameObject starPrefab;
     public Material lineMaterial;
-    public GameObject nebulaPrefab;
-    public float glowSpeed = 4f;
 
-    [Header("Celestial Drift")]
-    public float driftSpeed = 0.08f;
-    public float driftAmount = 2f;
+    [Header("Redline Cosmic Ripple")]
+    public float rippleSpeed = 1.5f;
+    public float rippleWidth = 0.08f;
+    public float rippleBrightness = 1.5f;
+    public float rippleThicknessBoost = 0.4f;
 
     List<Renderer> arcStars = new();
+    List<Renderer> hazeStars = new();
     List<GameObject> gearStars = new();
     List<LineRenderer> gearLines = new();
 
-    int lastGear = -99;
-    float driftTimer;
+    Transform arcRoot;
+    Transform glyphRoot;
 
-    GameObject nebulaInstance;
+    Transform rpmAuraRoot;
+    Renderer rpmAuraRenderer;
+
+    int lastGear = -99;
 
     void Start()
     {
+        CreateRoots();
         BuildArc();
-        CreateNebula();
+        BuildHaze();
     }
 
     void LateUpdate()
@@ -47,15 +80,23 @@ public class CosmicUIController : MonoBehaviour
         if (!vehicle || !mainCamera) return;
 
         AnchorToSky();
-        ApplyDrift();
-
         UpdateArcFill();
-        UpdateGearConstellation();
+        UpdateGlyph();
     }
 
-    // ============================================
+    void Update()
+    {
+        if (glyphRoot != null)
+        {
+            glyphRoot.Rotate(Vector3.forward,
+                glyphRotationSpeed * Time.deltaTime,
+                Space.Self);
+        }
+    }
+
+    // ==================================================
     // SKY ANCHOR
-    // ============================================
+    // ==================================================
     void AnchorToSky()
     {
         transform.position =
@@ -69,21 +110,72 @@ public class CosmicUIController : MonoBehaviour
             );
     }
 
-    // ============================================
-    // Gentle celestial drift
-    // ============================================
-    void ApplyDrift()
+    // ==================================================
+    // ROOT OBJECTS
+    // ==================================================
+    void CreateRoots()
     {
-        driftTimer += Time.deltaTime * driftSpeed;
-        float drift = Mathf.Sin(driftTimer) * driftAmount;
+        arcRoot = new GameObject("ArcRoot").transform;
+        arcRoot.parent = transform;
 
-        transform.Rotate(Vector3.up, drift * Time.deltaTime, Space.World);
+        arcRoot.localPosition =
+            Vector3.right * arcHorizontalOffset +
+            Vector3.up * arcVerticalOffset;
+
+        arcRoot.localRotation = Quaternion.identity;
+        arcRoot.localScale = Vector3.one * arcScaleMultiplier;
+
+        glyphRoot = new GameObject("GlyphRoot").transform;
+        glyphRoot.parent = transform;
+
+        glyphRoot.localPosition =
+            Vector3.right * glyphHorizontalOffset +
+            Vector3.up * (arcVerticalCurve + glyphHeightOffset);
+
+        glyphRoot.localRotation = Quaternion.identity;
     }
 
-    // ============================================
-    // BUILD ARC (structured celestial band)
-    // ============================================
+    // ==================================================
+    // CLEAN ARC BUILD
+    // ==================================================
     void BuildArc()
+    {
+        for (int layer = 0; layer < arcLayers; layer++)
+        {
+            float depth = layer * arcLayerDepthSpacing;
+
+            for (int i = 0; i < arcStarCount; i++)
+            {
+                float t = (float)i / (arcStarCount - 1);
+                float angle = Mathf.Lerp(-arcAngle * 0.5f, arcAngle * 0.5f, t);
+
+                Vector3 dir =
+                    Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
+
+                float vertical =
+                    Mathf.Sin(t * Mathf.PI) * arcVerticalCurve;
+
+                Vector3 pos =
+                    dir * arcRadius +
+                    Vector3.up * vertical -
+                    Vector3.forward * depth;
+
+                GameObject star =
+                    Instantiate(starPrefab, arcRoot);
+
+                star.transform.localPosition = pos;
+                star.transform.localScale =
+                    Vector3.one * Mathf.Lerp(4f, 2.5f, (float)layer / arcLayers);
+
+                arcStars.Add(star.GetComponent<Renderer>());
+            }
+        }
+    }
+
+    // ==================================================
+    // VOLUMETRIC HAZE
+    // ==================================================
+    void BuildHaze()
     {
         for (int i = 0; i < arcStarCount; i++)
         {
@@ -93,143 +185,223 @@ public class CosmicUIController : MonoBehaviour
             Vector3 dir =
                 Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
 
-            // slight vertical variation only
-            float verticalNoise =
-                Mathf.Sin(t * Mathf.PI) * arcThickness;
+            float vertical =
+                Mathf.Sin(t * Mathf.PI) * arcVerticalCurve;
 
-            Vector3 localPos =
-                dir * arcRadius +
-                Vector3.up * verticalNoise;
+            Vector3 pos =
+                dir * arcRadius * hazeRadiusMultiplier +
+                Vector3.up * vertical;
 
             GameObject star =
-                Instantiate(starPrefab, transform);
+                Instantiate(starPrefab, arcRoot);
 
-            star.transform.localPosition = localPos;
+            star.transform.localPosition = pos;
             star.transform.localScale = Vector3.one * 6f;
-            star.transform.localRotation = Quaternion.identity;
 
-            arcStars.Add(star.GetComponent<Renderer>());
+            Renderer r = star.GetComponent<Renderer>();
+            Color c = r.material.color;
+            c.a = hazeAlpha;
+            r.material.color = c;
+
+            hazeStars.Add(r);
         }
     }
 
-    // ============================================
-    // SPEED FILL
-    // ============================================
+
+
+
+    // ==================================================
+    // SPEED FILL SYSTEM
+    // ==================================================
+    // ==================================================
+    // SPEED FILL SYSTEM (CLEAN WHITE + REDLINE PULSE)
+    // ==================================================
     void UpdateArcFill()
     {
         float speedNorm =
             Mathf.Clamp01(vehicle.rb.velocity.magnitude / vehicle.maxSpeed);
 
+        float rpmNorm =
+            Mathf.Clamp01(vehicle.engineRPM / vehicle.maxRPM);
+
         int litCount =
             Mathf.RoundToInt(speedNorm * arcStarCount);
 
+        float thickness =
+            Mathf.Lerp(baseArcThickness, maxArcThickness, speedNorm);
+
+        bool inRedline = rpmNorm > redlineThreshold;
+
+        // periodic pulse when redlining (0.5–1 sec rhythm)
+        float pulse = 0f;
+        if (inRedline)
+        {
+            pulse =
+                Mathf.Sin(Time.time * 6f) * 0.5f + 0.5f; // 0–1 wave
+        }
+
         for (int i = 0; i < arcStars.Count; i++)
         {
-            float target =
-                i < litCount ? 1f : 0.08f;
+            int indexWithinLayer = i % arcStarCount;
+            bool lit = indexWithinLayer < litCount;
+
+            float baseAlpha = lit ? 1f : 0.05f;
+
+            // Subtle rpm shimmer (always white)
+            float shimmer =
+                Mathf.Sin(Time.time * rpmShimmerSpeed + i * 0.3f)
+                * rpmNorm * rpmShimmerIntensity;
+
+            float targetAlpha = baseAlpha + shimmer;
+
+            // Redline pulse (purely brightness + slight thickness)
+            if (inRedline && lit)
+            {
+                float pulseBoost = pulse * 0.35f; // noticeable but not dramatic
+                targetAlpha += pulseBoost;
+            }
 
             Color c = arcStars[i].material.color;
-            c.a = Mathf.Lerp(c.a, target, Time.deltaTime * glowSpeed);
+
+            // Always white stars
+            c.r = 1f;
+            c.g = 1f;
+            c.b = 1f;
+
+            c.a = Mathf.Lerp(c.a,
+                Mathf.Clamp01(targetAlpha),
+                Time.deltaTime * glowLerpSpeed);
+
             arcStars[i].material.color = c;
+
+            // Thickness swell during redline pulse
+            float thicknessBoost = inRedline ? pulse * 0.15f : 0f;
+
+            Vector3 scale = arcStars[i].transform.localScale;
+            scale.y = (thickness + thicknessBoost) * scale.x;
+            arcStars[i].transform.localScale = scale;
         }
     }
 
-    // ============================================
-    // GEAR CONSTELLATION (perfectly aligned)
-    // ============================================
-    void UpdateGearConstellation()
+
+
+
+    // ==================================================
+    // GLYPH SYSTEM (unchanged)
+    // ==================================================
+    void UpdateGlyph()
     {
         if (vehicle.currentGear == lastGear) return;
 
         lastGear = vehicle.currentGear;
 
-        foreach (var s in gearStars) Destroy(s);
-        foreach (var l in gearLines) Destroy(l.gameObject);
-
-        gearStars.Clear();
-        gearLines.Clear();
+        ClearGlyph();
 
         if (vehicle.currentGear <= 0) return;
 
-        float size = arcRadius * 0.07f; // smaller now
-        Vector3 baseOffset =
-            Vector3.up * (arcThickness + 10f); // sits right above arc
+        CreateGlyph(vehicle.currentGear);
+        StartCoroutine(GlyphShimmer());
+    }
 
-        switch (vehicle.currentGear)
+    void CreateGlyph(int gear)
+    {
+        float size = arcRadius * 0.05f * glyphScaleFactor;
+
+        List<Vector3> points = GetGlyphPattern(gear, size);
+
+        foreach (Vector3 p in points)
         {
-            case 1: CreateVertical(size, baseOffset); break;
-            case 2: CreateBinary(size, baseOffset); break;
-            case 3: CreatePolygon(size, 3, baseOffset); break;
-            case 4: CreatePolygon(size, 4, baseOffset); break;
-            case 5: CreatePolygon(size, 5, baseOffset); break;
-            default: CreatePolygon(size, 6, baseOffset); break;
+            GameObject star =
+                Instantiate(starPrefab, glyphRoot);
+
+            star.transform.localPosition = p;
+            star.transform.localScale =
+                Vector3.one * (arcRadius * 0.012f * glyphScaleFactor);
+
+            gearStars.Add(star);
         }
 
-        CreateLinesBetweenStars();
+        CreateGlyphLines(points);
     }
 
-    void CreatePolygon(float size, int sides, Vector3 baseOffset)
+    IEnumerator GlyphShimmer()
     {
-        for (int i = 0; i < sides; i++)
+        float timer = 0f;
+
+        while (timer < glyphShimmerDuration)
         {
-            float angle = i * Mathf.PI * 2f / sides;
+            timer += Time.deltaTime;
 
-            Vector3 offset =
-                new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * size;
+            float pulse =
+                Mathf.Sin(timer * 20f) * glyphShimmerIntensity;
 
-            CreateStar(baseOffset + offset);
+            foreach (var s in gearStars)
+            {
+                s.transform.localScale =
+                    Vector3.one *
+                    (arcRadius * 0.012f * glyphScaleFactor + pulse * 0.002f);
+            }
+
+            yield return null;
         }
     }
 
-    void CreateVertical(float s, Vector3 baseOffset)
+    List<Vector3> GetGlyphPattern(int gear, float size)
     {
-        CreateStar(baseOffset);
-        CreateStar(baseOffset + Vector3.up * s);
-    }
+        List<Vector3> points = new();
 
-    void CreateBinary(float s, Vector3 baseOffset)
-    {
-        CreateStar(baseOffset + Vector3.left * s * 0.5f);
-        CreateStar(baseOffset + Vector3.right * s * 0.5f);
-    }
-
-    void CreateStar(Vector3 localPos)
-    {
-        GameObject star =
-            Instantiate(starPrefab, transform);
-
-        star.transform.localPosition = localPos;
-        star.transform.localScale = Vector3.one * (arcRadius * 0.02f);
-        star.transform.localRotation = Quaternion.identity;
-
-        gearStars.Add(star);
-    }
-
-    // ============================================
-    // Constellation Lines
-    // ============================================
-    void CreateLinesBetweenStars()
-    {
-        if (gearStars.Count < 2) return;
-
-        for (int i = 0; i < gearStars.Count; i++)
+        switch (gear)
         {
-            int next = (i + 1) % gearStars.Count;
+            case 1:
+                points.Add(Vector3.zero);
+                break;
+            case 2:
+                points.Add(Vector3.left * size);
+                points.Add(Vector3.right * size);
+                break;
+            case 3:
+                points.Add(Vector3.up * size);
+                points.Add(Vector3.left * size);
+                points.Add(Vector3.right * size);
+                break;
+            case 4:
+                points.Add(Vector3.up * size);
+                points.Add(Vector3.right * size);
+                points.Add(Vector3.down * size);
+                points.Add(Vector3.left * size);
+                break;
+            default:
+                for (int i = 0; i < Mathf.Min(gear, 6); i++)
+                {
+                    float angle = i * Mathf.PI * 2f / Mathf.Min(gear, 6);
+                    points.Add(new Vector3(Mathf.Cos(angle),
+                                           Mathf.Sin(angle), 0f) * size);
+                }
+                break;
+        }
 
-            GameObject lineObj = new GameObject("ConstellationLine");
-            lineObj.transform.parent = transform;
+        return points;
+    }
+
+    void CreateGlyphLines(List<Vector3> points)
+    {
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            GameObject lineObj = new GameObject("GlyphLine");
+            lineObj.transform.parent = glyphRoot;
 
             LineRenderer lr = lineObj.AddComponent<LineRenderer>();
             lr.material = lineMaterial;
             lr.positionCount = 2;
-            lr.startWidth = arcRadius * 0.003f;
-            lr.endWidth = arcRadius * 0.003f;
             lr.useWorldSpace = false;
 
-            lr.SetPosition(0, gearStars[i].transform.localPosition);
-            lr.SetPosition(1, gearStars[next].transform.localPosition);
+            lr.SetPosition(0, points[i]);
+            lr.SetPosition(1, points[i + 1]);
 
-            Color faint = new Color(1f, 1f, 1f, 0.15f);
+            lr.startWidth = arcRadius * 0.0008f * glyphScaleFactor;
+            lr.endWidth = arcRadius * 0.0008f * glyphScaleFactor;
+
+            Color faint = new Color(1f, 1f, 1f, 0.1f);
             lr.startColor = faint;
             lr.endColor = faint;
 
@@ -237,23 +409,12 @@ public class CosmicUIController : MonoBehaviour
         }
     }
 
-    // ============================================
-    // Nebula Background
-    // ============================================
-    void CreateNebula()
+    void ClearGlyph()
     {
-        if (!nebulaPrefab) return;
+        foreach (var s in gearStars) Destroy(s);
+        foreach (var l in gearLines) Destroy(l.gameObject);
 
-        nebulaInstance =
-            Instantiate(nebulaPrefab, transform);
-
-        nebulaInstance.transform.localPosition =
-            Vector3.zero;
-
-        nebulaInstance.transform.localScale =
-            Vector3.one * arcRadius * 1.8f;
-
-        nebulaInstance.transform.localRotation =
-            Quaternion.identity;
+        gearStars.Clear();
+        gearLines.Clear();
     }
 }
