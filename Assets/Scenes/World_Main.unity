@@ -211,27 +211,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roadState: {fileID: 155815526}
+  director: {fileID: 1064358333}
   waterMaterial: {fileID: 2100000, guid: afb9a70acc433dd4ba687e9b328c8d02, type: 2}
   minWaveScale: 0.018
   maxWaveScale: 0.035
   minWaveSpeed: 0.6
   maxWaveSpeed: 0.7
   baseSkyRotationSpeed: 0.18
-  skyGradient:
-    serializedVersion: 2
-    key0: {r: 0.07450981, g: 0.16862746, b: 0.32156864, a: 1}
-    key1: {r: 0.1764706, g: 0.41960785, b: 0.8784314, a: 1}
-    key2: {r: 0.41960785, g: 0.21960784, b: 0.9019608, a: 0}
-    key3: {r: 0.12156863, g: 0.6862745, b: 0.76862746, a: 0}
-    key4: {r: 0.078431375, g: 0.1764706, b: 0.3529412, a: 0}
+  arcGradients:
+  - serializedVersion: 2
+    key0: {r: 0.972549, g: 0.9843137, b: 1, a: 1}
+    key1: {r: 0.48742133, g: 0.8718553, b: 1, a: 1}
+    key2: {r: 0.88166493, g: 0.899371, b: 0.41009048, a: 0}
+    key3: {r: 0.72156864, g: 0.9098039, b: 1, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
     key6: {r: 0, g: 0, b: 0, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
-    ctime1: 16384
-    ctime2: 32768
-    ctime3: 49151
-    ctime4: 65535
+    ctime1: 19661
+    ctime2: 45875
+    ctime3: 65535
+    ctime4: 0
     ctime5: 0
     ctime6: 0
     ctime7: 0
@@ -245,9 +246,183 @@ MonoBehaviour:
     atime7: 0
     m_Mode: 0
     m_ColorSpace: -1
-    m_NumColorKeys: 5
+    m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  arcDuration: 600
+  - serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 0.636217, g: 0.51886785, b: 1, a: 1}
+    key2: {r: 0.7058824, g: 0.96862745, b: 1, a: 0}
+    key3: {r: 0.9607843, g: 0.9019608, b: 1, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 26214
+    ctime2: 52428
+    ctime3: 65535
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 4
+    m_NumAlphaKeys: 2
+  - serializedVersion: 2
+    key0: {r: 0.9647059, g: 1, b: 1, a: 1}
+    key1: {r: 0.72156864, g: 1, b: 0.95686275, a: 1}
+    key2: {r: 0.8392157, g: 0.972549, b: 1, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 32768
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 2
+  - serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 0.98742133, g: 0.7172777, b: 0.9117812, a: 1}
+    key2: {r: 0.57547164, g: 0.7830189, b: 1, a: 0}
+    key3: {r: 1, g: 0.9529412, b: 0.8392157, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 19661
+    ctime2: 45875
+    ctime3: 65535
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 4
+    m_NumAlphaKeys: 2
+  - serializedVersion: 2
+    key0: {r: 0.96862745, g: 1, b: 1, a: 1}
+    key1: {r: 0.47515914, g: 0.9748427, b: 0.5255928, a: 1}
+    key2: {r: 0.8862745, g: 0.9411765, b: 1, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 32768
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 2
+  - serializedVersion: 2
+    key0: {r: 0.8862745, g: 0.9411765, b: 1, a: 1}
+    key1: {r: 0.9056604, g: 0.30473474, b: 0.30473474, a: 1}
+    key2: {r: 0.8745098, g: 0.9843137, b: 1, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 32768
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 2
+  - serializedVersion: 2
+    key0: {r: 0.39545497, g: 0.9748427, b: 0.44733998, a: 1}
+    key1: {r: 1, g: 0.8745098, b: 1, a: 1}
+    key2: {r: 0.77254903, g: 1, b: 1, a: 0}
+    key3: {r: 1, g: 0.75512713, b: 0.37421376, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 19661
+    ctime2: 45875
+    ctime3: 65535
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 4
+    m_NumAlphaKeys: 2
+  arcDuration: 480
 --- !u!4 &387416384
 Transform:
   m_ObjectHideFlags: 0
@@ -294,23 +469,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   firstChunk: {fileID: 11400000, guid: ed245f8b1c77e294bb7b6e76cf067a8d, type: 2}
   roadState: {fileID: 155815526}
+  director: {fileID: 1064358333}
   player: {fileID: 48541895}
   chunkLength: 40
   chunksAhead: 20
   chunksBehind: 6
   chunkOverlap: 2
-  sectionSize: 18
   waterPrefab: {fileID: 4050938500205680382, guid: 000c44fc089f8f04285e12e2a3cfd18b, type: 3}
   waterOffsetY: -3
   waterWidth: 200
   sideWaterCount: 2
   starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
   starRoadOffsetY: 0.05
+  starWidthBleed: 1.2
+  starLengthBleed: 1.1
+  fxBrightnessMultiplier: 1.2
+  fxEmissionMultiplier: 1.5
+  skyTintBlend: 0.35
   boundaryParticlePrefab: {fileID: 2459259389070916698, guid: fda31d4e6075ada4b8847638309d2076, type: 3}
   boundaryOffsetY: 0.2
   boundaryHeight: 2.5
   boundaryThickness: 0.5
   boundaryOutwardPadding: 0.2
+  colliderWidthPadding: 0.4
 --- !u!4 &702803717
 Transform:
   m_ObjectHideFlags: 0
@@ -465,7 +646,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   road: {fileID: 155815526}
-  arcDuration: 600
+  arcDuration: 480
+  miniArcMin: 40
+  miniArcMax: 90
   blendSpeed: 0.6
 --- !u!4 &1064358334
 Transform:
@@ -6020,7 +6203,7 @@ SceneRoots:
   - {fileID: 702803717}
   - {fileID: 155815527}
   - {fileID: 1748035233}
-  - {fileID: 387416384}
   - {fileID: 1608102598}
+  - {fileID: 387416384}
   - {fileID: 1064358334}
   - {fileID: 712967959}

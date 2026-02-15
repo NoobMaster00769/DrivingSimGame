@@ -5,7 +5,10 @@ public class LevelLayoutGenerator : MonoBehaviour
 {
     public LevelChunkData firstChunk;
     public RoadState roadState;
+    public WorldEventDirector director;
     public Transform player;
+
+    float directionTimer;
 
     [Header("Chunk Settings")]
     public float chunkLength = 40f;
@@ -14,9 +17,6 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     [Header("Chunk Overlap")]
     public float chunkOverlap = 2f;
-
-    [Header("Section Settings")]
-    public int sectionSize = 18;
 
     [Header("Water")]
     public GameObject waterPrefab;
@@ -27,10 +27,13 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Header("Star Road FX")]
     public GameObject starRoadPrefab;
     public float starRoadOffsetY = 0.05f;
+    public float starWidthBleed = 1.15f;
+    public float starLengthBleed = 1.1f;
 
-    [Header("Star Seam Fix")]
-    public float starWidthBleed = 1.15f;     // 🔥 NEW
-    public float starLengthBleed = 1.1f;     // 🔥 NEW
+    [Header("FX Enhancement")]
+    public float fxBrightnessMultiplier = 1.6f;
+    public float fxEmissionMultiplier = 2.0f;
+    public float skyTintBlend = 0.55f;   // 🔥 stronger tint
 
     [Header("Boundary FX")]
     public GameObject boundaryParticlePrefab;
@@ -40,34 +43,24 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float boundaryOutwardPadding = 0.2f;
 
     [Header("Collider Seam Fix")]
-    public float colliderWidthPadding = 0.4f;  // 🔥 NEW
+    public float colliderWidthPadding = 0.4f;
 
-    private Vector3 currentPosition;
-    private Vector3 currentForward;
+    Vector3 currentPosition;
+    Vector3 currentForward;
 
-    private float smoothCurvature;
-    private float sectionCurvature;
-    private float sectionWidth;
-    private float sectionBanking;
+    float smoothCurvature;
+    float turnMomentum;
+    float accumulatedYaw;
 
-    private float turnMomentum;
-    private float accumulatedYaw;
-    private int chunksInCurrentSection;
 
-    private List<GameObject> roadChunks = new();
-    private List<GameObject> waterChunks = new();
-    private List<GameObject> starRoadChunks = new();
-    private List<GameObject> boundaryChunks = new();
-
-    private List<Vector3> roadCenters = new();
+    List<GameObject> roadChunks = new();
+    List<Vector3> roadCenters = new();
 
     void Start()
     {
         currentPosition = Vector3.zero;
         currentForward = Vector3.forward;
         accumulatedYaw = 0f;
-
-        BeginNewSection();
 
         for (int i = 0; i < chunksAhead; i++)
             SpawnNextChunk();
@@ -86,19 +79,8 @@ public class LevelLayoutGenerator : MonoBehaviour
         Cleanup();
     }
 
-    void BeginNewSection()
-    {
-        sectionCurvature = roadState.curvature;
-        sectionWidth = roadState.width;
-        sectionBanking = roadState.banking;
-        chunksInCurrentSection = 0;
-    }
-
     void SpawnNextChunk()
     {
-        if (chunksInCurrentSection >= sectionSize)
-            BeginNewSection();
-
         currentForward =
             Quaternion.Euler(0f, accumulatedYaw, 0f) *
             Vector3.forward;
@@ -111,11 +93,9 @@ public class LevelLayoutGenerator : MonoBehaviour
             Instantiate(prefab, currentPosition, roadRotation);
 
         ApplySectionReactivity(chunk);
-
-        SpawnWaterGrid(chunk.transform.position, roadRotation);
+        SpawnWaterGrid(chunk.transform.position);
         SpawnStarRoadFX(chunk);
 
-        // 🔥 Slightly widen collider dynamically
         BoxCollider roadCol = chunk.GetComponent<BoxCollider>();
         if (roadCol != null)
         {
@@ -133,8 +113,8 @@ public class LevelLayoutGenerator : MonoBehaviour
             CreateBoundarySegment(
                 roadCenters[^2],
                 roadCenters[^1],
-                chunk.transform.localScale.x
-            );
+                chunk.transform.localScale.x,
+                chunk.transform); // pass parent
         }
 
         Transform end = chunk.transform.Find("End");
@@ -147,33 +127,42 @@ public class LevelLayoutGenerator : MonoBehaviour
                 currentForward * (chunkLength - chunkOverlap);
 
         smoothCurvature =
-            Mathf.Lerp(smoothCurvature, sectionCurvature, 0.1f);
+     Mathf.Lerp(smoothCurvature, roadState.curvature, 0.1f);
 
+        // Signed curvature (balanced left/right)
         float targetTurn =
             Mathf.Lerp(-4.5f, 4.5f, smoothCurvature);
 
+        // Smooth turn acceleration
         turnMomentum =
-            Mathf.Lerp(turnMomentum, targetTurn, 0.2f);
+            Mathf.Lerp(turnMomentum, targetTurn, 0.15f);
 
+        // Natural damping (prevents infinite circle bias)
+        turnMomentum *= 0.98f;
+
+        // Apply yaw properly
         accumulatedYaw += turnMomentum;
 
-        chunksInCurrentSection++;
+
     }
 
     void ApplySectionReactivity(GameObject chunk)
     {
         float width =
-            Mathf.Lerp(1.2f, 0.85f, sectionWidth);
+            Mathf.Lerp(1.2f, 0.85f, roadState.width);
 
         chunk.transform.localScale =
             new Vector3(width, 1f, 1f);
 
         float bank =
-            Mathf.Lerp(-5f, 5f, sectionBanking);
+            Mathf.Lerp(-5f, 5f, roadState.banking);
 
         chunk.transform.Rotate(Vector3.forward, bank, Space.Self);
     }
 
+    // =========================
+    // STAR FX ENHANCED
+    // =========================
     void SpawnStarRoadFX(GameObject chunk)
     {
         if (!starRoadPrefab) return;
@@ -184,24 +173,16 @@ public class LevelLayoutGenerator : MonoBehaviour
             new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
         fx.transform.localRotation = Quaternion.identity;
 
-        ParticleSystem ps = fx.GetComponent<ParticleSystem>();
-        if (ps == null) return;
-
-        var shape = ps.shape;
-
-        float baseWidth = 10f;
-        float scaledWidth =
-            baseWidth * chunk.transform.localScale.x;
-
-        // 🔥 Bleed width & length dynamically
-        shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(
-            scaledWidth * starWidthBleed,
-            0.05f,
-            (chunkLength + chunkOverlap) * starLengthBleed);
+        EnhanceFX(fx, chunk.transform.localScale.x,
+                  chunkLength + chunkOverlap,
+                  true);
     }
 
-    void CreateBoundarySegment(Vector3 start, Vector3 end, float widthScale)
+    // =========================
+    // BOUNDARY FX ENHANCED
+    // =========================
+    void CreateBoundarySegment(Vector3 start, Vector3 end, float widthScale, Transform parent)
+
     {
         Vector3 dir = (end - start).normalized;
         float length = Vector3.Distance(start, end);
@@ -209,16 +190,16 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         float halfRoadWidth = widthScale * 5f;
 
-        CreateOneSide(mid, dir, length, -1f, halfRoadWidth);
-        CreateOneSide(mid, dir, length, 1f, halfRoadWidth);
+        CreateOneSide(mid, dir, length, -1f, halfRoadWidth, parent);
+        CreateOneSide(mid, dir, length, 1f, halfRoadWidth, parent);
+
     }
 
-    void CreateOneSide(
-        Vector3 mid,
-        Vector3 forward,
-        float length,
-        float sideSign,
-        float halfWidth)
+    void CreateOneSide(Vector3 mid, Vector3 forward,
+                    float length, float sideSign,
+                    float halfWidth,
+                    Transform parent)
+
     {
         Vector3 right =
             Vector3.Cross(Vector3.up, forward).normalized;
@@ -234,16 +215,15 @@ public class LevelLayoutGenerator : MonoBehaviour
             Quaternion.LookRotation(forward, Vector3.up);
 
         GameObject wall = new("BoundaryCollider");
+        wall.transform.parent = parent;
         wall.transform.position = pos;
         wall.transform.rotation = rot;
-
+        
         BoxCollider col = wall.AddComponent<BoxCollider>();
         col.size = new Vector3(
             boundaryThickness,
             boundaryHeight,
             length + chunkOverlap);
-
-        boundaryChunks.Add(wall);
 
         if (boundaryParticlePrefab)
         {
@@ -252,34 +232,76 @@ public class LevelLayoutGenerator : MonoBehaviour
                             pos,
                             rot);
 
-            ParticleSystem ps =
-                fx.GetComponent<ParticleSystem>();
+            fx.transform.parent = parent; // 🔥 THIS IS THE FIX
 
-            if (ps)
-            {
-                var shape = ps.shape;
-                shape.shapeType =
-                    ParticleSystemShapeType.Box;
+            EnhanceFX(fx, 1f, length + chunkOverlap, false);
+        }
 
-                shape.scale =
-                    new Vector3(
-                        boundaryThickness,
-                        boundaryHeight,
-                        length + chunkOverlap);
-            }
+    }
 
-            boundaryChunks.Add(fx);
+    // =========================
+    // UNIVERSAL FX ENHANCER
+    // =========================
+    void EnhanceFX(GameObject fx, float widthScale,
+                   float length, bool isStar)
+    {
+        ParticleSystem ps = fx.GetComponent<ParticleSystem>();
+        if (ps == null) return;
+
+        var shape = ps.shape;
+        var emission = ps.emission;
+        var main = ps.main;
+
+        if (isStar)
+        {
+            float baseWidth = 10f;
+            float scaledWidth = baseWidth * widthScale;
+
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(
+                scaledWidth * starWidthBleed,
+                0.05f,
+                length * starLengthBleed);
+        }
+        else
+        {
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(
+                boundaryThickness,
+                boundaryHeight,
+                length);
+        }
+
+        // 🔥 Increase density
+        emission.rateOverTime =
+            emission.rateOverTime.constant * fxEmissionMultiplier;
+
+        // 🔥 Increase brightness/size
+        main.startSize =
+            main.startSize.constant * fxBrightnessMultiplier;
+
+        // 🔥 Strong sky tint influence
+        if (RenderSettings.skybox != null)
+        {
+            Color skyTint =
+                RenderSettings.skybox.GetColor("_Tint");
+
+            Color blended =
+                Color.Lerp(Color.white, skyTint, skyTintBlend);
+
+            // slight HDR boost
+            blended *= 1.3f;
+
+            main.startColor = blended;
         }
     }
 
-    void SpawnWaterGrid(Vector3 basePosition,
-                        Quaternion roadRotation)
+    void SpawnWaterGrid(Vector3 basePosition)
     {
         if (!waterPrefab) return;
 
         Quaternion waterRotation =
-            Quaternion.LookRotation(currentForward,
-                                    Vector3.up);
+            Quaternion.LookRotation(currentForward, Vector3.up);
 
         Vector3 centerPos =
             basePosition + Vector3.up * waterOffsetY;
@@ -294,32 +316,23 @@ public class LevelLayoutGenerator : MonoBehaviour
             Vector3 offset =
                 rightDir * waterWidth * i;
 
-            SpawnWaterSlab(centerPos + offset,
-                           waterRotation);
-
-            SpawnWaterSlab(centerPos - offset,
-                           waterRotation);
+            SpawnWaterSlab(centerPos + offset, waterRotation);
+            SpawnWaterSlab(centerPos - offset, waterRotation);
         }
     }
 
-    void SpawnWaterSlab(Vector3 position,
-                        Quaternion rotation)
+    void SpawnWaterSlab(Vector3 position, Quaternion rotation)
     {
         GameObject water =
-            Instantiate(waterPrefab,
-                        position,
-                        rotation);
+            Instantiate(waterPrefab, position, rotation);
 
         water.transform.localScale =
             new Vector3(waterWidth, 1f, chunkLength);
-
-        waterChunks.Add(water);
     }
 
     void Cleanup()
     {
-        if (roadChunks.Count <=
-            chunksAhead + chunksBehind)
+        if (roadChunks.Count <= chunksAhead + chunksBehind)
             return;
 
         GameObject oldestRoad = roadChunks[0];

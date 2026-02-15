@@ -1,8 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class WorldVisualController : MonoBehaviour
 {
     public RoadState roadState;
+    public WorldEventDirector director;   // 🔥 link this
     public Material waterMaterial;
 
     [Header("Wave Motion")]
@@ -14,28 +15,29 @@ public class WorldVisualController : MonoBehaviour
     [Header("Skybox Rotation")]
     public float baseSkyRotationSpeed = 0.2f;
 
-    [Header("Sky Color Shift")]
-    public Gradient skyGradient;
-    public float arcDuration = 600f;
+    [Header("Arc Sky Gradients (Match Arc Index Order)")]
+    public Gradient[] arcGradients;   // MUST match arc indices (0–6)
+
+    public float arcDuration = 480f;
 
     float skyRotation;
     float arcTimer;
 
     void Update()
     {
-        if (!roadState || !waterMaterial)
+        if (!roadState || !waterMaterial || !director)
             return;
 
         arcTimer += Time.deltaTime;
 
-        UpdateWaterMotion();   // UNTOUCHED
+        if (arcTimer > arcDuration)
+            arcTimer = 0f;
+
+        UpdateWaterMotion();   // untouched
         UpdateSkybox();
         UpdateSkyColor();
     }
 
-    // -------------------------
-    // DO NOT TOUCH � preserved
-    // -------------------------
     void UpdateWaterMotion()
     {
         float pulse = Mathf.Sin(Time.time * 0.5f) * 0.002f;
@@ -62,13 +64,18 @@ public class WorldVisualController : MonoBehaviour
     void UpdateSkyColor()
     {
         if (RenderSettings.skybox == null) return;
+        if (arcGradients.Length == 0) return;
 
-        float t = (arcTimer % arcDuration) / arcDuration;
+        int arcIndex = director.CurrentArcIndex;
 
-        if (skyGradient != null)
-        {
-            Color c = skyGradient.Evaluate(t);
-            RenderSettings.skybox.SetColor("_Tint", c);
-        }
+        if (arcIndex >= arcGradients.Length)
+            arcIndex = 0;
+
+        float t = arcTimer / arcDuration;
+
+        Color c =
+            arcGradients[arcIndex].Evaluate(t);
+
+        RenderSettings.skybox.SetColor("_Tint", c);
     }
 }
