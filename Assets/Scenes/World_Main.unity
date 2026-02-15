@@ -296,8 +296,9 @@ MonoBehaviour:
   roadState: {fileID: 155815526}
   player: {fileID: 48541895}
   chunkLength: 40
-  chunksAhead: 15
-  chunksBehind: 5
+  chunksAhead: 20
+  chunksBehind: 6
+  chunkOverlap: 2
   sectionSize: 18
   waterPrefab: {fileID: 4050938500205680382, guid: 000c44fc089f8f04285e12e2a3cfd18b, type: 3}
   waterOffsetY: -3
@@ -309,10 +310,7 @@ MonoBehaviour:
   boundaryOffsetY: 0.2
   boundaryHeight: 2.5
   boundaryThickness: 0.5
-  pulseSpeed: 2
-  pulseAmount: 0.15
-  speedInfluence: 0.05
-  curvatureInfluence: 500
+  boundaryOutwardPadding: 0.2
 --- !u!4 &702803717
 Transform:
   m_ObjectHideFlags: 0
