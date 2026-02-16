@@ -163,9 +163,13 @@ MonoBehaviour:
   width: 0
   banking: 0
   elevationEnergy: 0
-  curvatureMultiplier: 1
-  widthMultiplier: 1
-  bankingMultiplier: 1
+  globalAmplitudeMultiplier: 1.8
+  driftStrength: 1.8
+  waveStrength: 1.5
+  arcAmplitude: 0.6
+  arcFrequency: 0.8
+  arcWidthTarget: 0.8
+  arcBankTarget: 0.7
 --- !u!4 &155815527
 Transform:
   m_ObjectHideFlags: 0
@@ -175,7 +179,7 @@ Transform:
   m_GameObject: {fileID: 155815525}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 49.214615, y: 36.487785, z: 239.69072}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -214,9 +218,9 @@ MonoBehaviour:
   director: {fileID: 1064358333}
   waterMaterial: {fileID: 2100000, guid: afb9a70acc433dd4ba687e9b328c8d02, type: 2}
   minWaveScale: 0.018
-  maxWaveScale: 0.035
+  maxWaveScale: 0.02
   minWaveSpeed: 0.6
-  maxWaveSpeed: 0.7
+  maxWaveSpeed: 0.65
   baseSkyRotationSpeed: 0.18
   arcGradients:
   - serializedVersion: 2
@@ -422,7 +426,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  arcDuration: 480
+  arcDuration: 180
 --- !u!4 &387416384
 Transform:
   m_ObjectHideFlags: 0
@@ -471,6 +475,7 @@ MonoBehaviour:
   roadState: {fileID: 155815526}
   director: {fileID: 1064358333}
   player: {fileID: 48541895}
+  yawStrength: 20
   chunkLength: 40
   chunksAhead: 20
   chunksBehind: 6
@@ -646,10 +651,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   road: {fileID: 155815526}
-  arcDuration: 480
-  miniArcMin: 40
-  miniArcMax: 90
-  blendSpeed: 0.6
+  arcDuration: 180
+  miniArcMin: 20
+  miniArcMax: 40
 --- !u!4 &1064358334
 Transform:
   m_ObjectHideFlags: 0
@@ -6200,10 +6204,10 @@ SceneRoots:
   m_Roots:
   - {fileID: 1000864158}
   - {fileID: 2127979728}
-  - {fileID: 702803717}
-  - {fileID: 155815527}
   - {fileID: 1748035233}
-  - {fileID: 1608102598}
+  - {fileID: 702803717}
   - {fileID: 387416384}
+  - {fileID: 155815527}
   - {fileID: 1064358334}
   - {fileID: 712967959}
+  - {fileID: 1608102598}

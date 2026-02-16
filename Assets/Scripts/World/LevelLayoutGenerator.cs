@@ -8,7 +8,8 @@ public class LevelLayoutGenerator : MonoBehaviour
     public WorldEventDirector director;
     public Transform player;
 
-    float directionTimer;
+    [Header("CURVATURE STRENGTH")]
+    [Range(1f, 30f)] public float yawStrength = 18f;
 
     [Header("Chunk Settings")]
     public float chunkLength = 40f;
@@ -33,7 +34,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Header("FX Enhancement")]
     public float fxBrightnessMultiplier = 1.6f;
     public float fxEmissionMultiplier = 2.0f;
-    public float skyTintBlend = 0.55f;   // 🔥 stronger tint
+    public float skyTintBlend = 0.55f;
 
     [Header("Boundary FX")]
     public GameObject boundaryParticlePrefab;
@@ -51,7 +52,6 @@ public class LevelLayoutGenerator : MonoBehaviour
     float smoothCurvature;
     float turnMomentum;
     float accumulatedYaw;
-
 
     List<GameObject> roadChunks = new();
     List<Vector3> roadCenters = new();
@@ -114,7 +114,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                 roadCenters[^2],
                 roadCenters[^1],
                 chunk.transform.localScale.x,
-                chunk.transform); // pass parent
+                chunk.transform);
         }
 
         Transform end = chunk.transform.Find("End");
@@ -127,23 +127,16 @@ public class LevelLayoutGenerator : MonoBehaviour
                 currentForward * (chunkLength - chunkOverlap);
 
         smoothCurvature =
-     Mathf.Lerp(smoothCurvature, roadState.curvature, 0.1f);
+            Mathf.Lerp(smoothCurvature, roadState.curvature, 0.35f);
 
-        // Signed curvature (balanced left/right)
-        float targetTurn =
-            Mathf.Lerp(-4.5f, 4.5f, smoothCurvature);
+        float targetTurn = smoothCurvature * yawStrength;
 
-        // Smooth turn acceleration
         turnMomentum =
-            Mathf.Lerp(turnMomentum, targetTurn, 0.15f);
+            Mathf.Lerp(turnMomentum, targetTurn, 0.4f);
 
-        // Natural damping (prevents infinite circle bias)
-        turnMomentum *= 0.98f;
+        turnMomentum *= 0.997f;
 
-        // Apply yaw properly
         accumulatedYaw += turnMomentum;
-
-
     }
 
     void ApplySectionReactivity(GameObject chunk)
