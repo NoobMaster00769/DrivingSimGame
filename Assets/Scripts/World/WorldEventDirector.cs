@@ -6,9 +6,9 @@ public class WorldEventDirector : MonoBehaviour
     public RoadState road;
 
     [Header("Arc Settings")]
-    public float arcDuration = 180f;     // shorter arcs = more variation
-    public float miniArcMin = 20f;
-    public float miniArcMax = 40f;
+    public float arcDuration = 120f;
+    public float miniArcMin = 15f;
+    public float miniArcMax = 30f;
 
     float arcTimer;
     float miniArcTimer;
@@ -82,53 +82,34 @@ public class WorldEventDirector : MonoBehaviour
     {
         switch (currentArcIndex)
         {
-            case 0: // Calm Horizon
+            case 0: // Calm
                 road.arcAmplitude = 0.6f;
                 road.arcFrequency = 0.6f;
-                road.arcWidthTarget = 0.9f;
-                road.arcBankTarget = 0.6f;
+                road.rhythmIntensity = 0.7f;
                 break;
 
             case 1: // Pulse
                 road.arcAmplitude = 0.9f;
-                road.arcFrequency = 1.2f;
-                road.arcWidthTarget = 0.8f;
-                road.arcBankTarget = 0.8f;
+                road.arcFrequency = 1.0f;
+                road.rhythmIntensity = 1.0f;
                 break;
 
             case 2: // Ribbon
                 road.arcAmplitude = 1.1f;
-                road.arcFrequency = 1.5f;
-                road.arcWidthTarget = 0.7f;
-                road.arcBankTarget = 0.9f;
-                break;
-
-            case 3: // Chaotic Drift
-                road.arcAmplitude = 1.3f;
-                road.arcFrequency = 2.0f;
-                road.arcWidthTarget = 0.65f;
-                road.arcBankTarget = 1.0f;
-                break;
-
-            case 4:
-                road.arcAmplitude = 0.8f;
                 road.arcFrequency = 1.3f;
-                road.arcWidthTarget = 0.75f;
-                road.arcBankTarget = 0.85f;
+                road.rhythmIntensity = 1.2f;
                 break;
 
-            case 5:
-                road.arcAmplitude = 0.6f;
-                road.arcFrequency = 0.9f;
-                road.arcWidthTarget = 1.0f;
-                road.arcBankTarget = 0.7f;
+            case 3: // Chaotic
+                road.arcAmplitude = 1.4f;
+                road.arcFrequency = 1.6f;
+                road.rhythmIntensity = 1.5f;
                 break;
 
-            case 6:
-                road.arcAmplitude = 1.5f;
-                road.arcFrequency = 2.2f;
-                road.arcWidthTarget = 0.6f;
-                road.arcBankTarget = 1.1f;
+            default:
+                road.arcAmplitude = 0.8f;
+                road.arcFrequency = 1.0f;
+                road.rhythmIntensity = 1.0f;
                 break;
         }
     }

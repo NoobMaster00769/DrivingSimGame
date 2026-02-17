@@ -164,12 +164,9 @@ MonoBehaviour:
   banking: 0
   elevationEnergy: 0
   globalAmplitudeMultiplier: 1.8
-  driftStrength: 1.8
-  waveStrength: 1.5
   arcAmplitude: 0.6
   arcFrequency: 0.8
-  arcWidthTarget: 0.8
-  arcBankTarget: 0.7
+  rhythmIntensity: 1
 --- !u!4 &155815527
 Transform:
   m_ObjectHideFlags: 0
@@ -485,14 +482,14 @@ MonoBehaviour:
   waterWidth: 200
   sideWaterCount: 2
   starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
-  starRoadOffsetY: 0.05
+  starRoadOffsetY: 0.25
   starWidthBleed: 1.2
   starLengthBleed: 1.1
   fxBrightnessMultiplier: 1.2
   fxEmissionMultiplier: 1.5
   skyTintBlend: 0.35
   boundaryParticlePrefab: {fileID: 2459259389070916698, guid: fda31d4e6075ada4b8847638309d2076, type: 3}
-  boundaryOffsetY: 0.2
+  boundaryOffsetY: 0.4
   boundaryHeight: 2.5
   boundaryThickness: 0.5
   boundaryOutwardPadding: 0.2

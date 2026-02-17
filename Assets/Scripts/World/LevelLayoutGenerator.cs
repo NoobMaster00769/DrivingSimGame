@@ -127,16 +127,17 @@ public class LevelLayoutGenerator : MonoBehaviour
                 currentForward * (chunkLength - chunkOverlap);
 
         smoothCurvature =
-            Mathf.Lerp(smoothCurvature, roadState.curvature, 0.35f);
+     Mathf.Lerp(smoothCurvature, roadState.curvature, 0.35f);
 
-        float targetTurn = smoothCurvature * yawStrength;
+        float targetTurn = smoothCurvature * 14f;
 
         turnMomentum =
             Mathf.Lerp(turnMomentum, targetTurn, 0.4f);
 
-        turnMomentum *= 0.997f;
+        turnMomentum *= 0.995f;
 
         accumulatedYaw += turnMomentum;
+
     }
 
     void ApplySectionReactivity(GameObject chunk)
