@@ -21,18 +21,15 @@ public class RoadState : MonoBehaviour
     [HideInInspector] public float arcFrequency = 1f;
     [HideInInspector] public float rhythmIntensity = 1f;
 
-    // 🌀 Spiral Layer
     bool spiralActive;
     float spiralTimer;
     float spiralDuration;
     float spiralDirection;
 
-    // 🌊 Flow Corridor
     bool flowCorridorActive;
     float flowTimer;
     float flowDuration;
 
-    // 🔻 Compression
     bool compressionActive;
     float compressionTimer;
     float compressionDuration;
@@ -47,7 +44,6 @@ public class RoadState : MonoBehaviour
     float directionBias = 1f;
     float directionMemoryTimer;
 
-    // 🎵 Echo system
     float curvatureVelocity;
 
     void Start()
@@ -86,9 +82,6 @@ public class RoadState : MonoBehaviour
             StartCompression();
     }
 
-    // =============================
-    // 🌀 SPIRAL
-    // =============================
     void StartSpiral()
     {
         spiralActive = true;
@@ -106,13 +99,10 @@ public class RoadState : MonoBehaviour
         if (spiralTimer > spiralDuration)
         {
             spiralActive = false;
-            StartFlowCorridor(); // Always reward
+            StartFlowCorridor();
         }
     }
 
-    // =============================
-    // 🌊 FLOW CORRIDOR
-    // =============================
     void StartFlowCorridor()
     {
         flowCorridorActive = true;
@@ -130,9 +120,6 @@ public class RoadState : MonoBehaviour
             flowCorridorActive = false;
     }
 
-    // =============================
-    // 🔻 COMPRESSION
-    // =============================
     void StartCompression()
     {
         compressionActive = true;
@@ -150,14 +137,10 @@ public class RoadState : MonoBehaviour
             compressionActive = false;
     }
 
-    // =============================
-    // CORE GEOMETRY SYSTEM
-    // =============================
     void UpdateGeometry()
     {
         float t = Time.time;
 
-        // 🌊 1. CURVATURE BREATHING
         float macroBreath = Mathf.Sin(t * 0.05f) * 0.5f + 0.5f;
 
         float amplitude =
@@ -165,13 +148,11 @@ public class RoadState : MonoBehaviour
             macroBreath *
             globalAmplitudeMultiplier;
 
-        // 🎵 2. HARMONIC RESONANCE CURVE
         float baseWave = Mathf.Sin(t * arcFrequency);
         float harmonic = 0.35f * Mathf.Sin(t * arcFrequency * 3f);
 
         float combinedWave = baseWave + harmonic;
 
-        // 🔄 Elastic shaping
         float elasticWave =
             Mathf.Sign(combinedWave) *
             Mathf.Pow(Mathf.Abs(combinedWave), 1.35f);
@@ -192,25 +173,33 @@ public class RoadState : MonoBehaviour
             rhythmStrength *
             directionBias *
             rhythmIntensity;
-
-        // 🌀 3. SPIRAL WOBBLE DISTORTION
         if (spiralActive)
         {
             float progress = spiralTimer / spiralDuration;
-            float spiralStrength = Mathf.Lerp(0.8f, 1.6f, progress);
 
-            float wobble =
-                Mathf.Sin(t * 6f) * 0.15f; // subtle instability
+            // Ease in and ease out spiral power
+            float envelope = Mathf.Sin(progress * Mathf.PI);
 
-            targetCurvature =
+            float spiralStrength =
+                Mathf.Lerp(0.8f, 1.6f, progress);
+
+            float spiralCore =
                 spiralDirection *
                 spiralStrength *
                 arcAmplitude *
-                globalAmplitudeMultiplier
-                + wobble;
+                globalAmplitudeMultiplier;
+
+            float wobble =
+                Mathf.Sin(t * 6f) * 0.15f;
+
+            // BLEND instead of hard override
+            targetCurvature =
+                Mathf.Lerp(targetCurvature,
+                           spiralCore + wobble,
+                           envelope);
         }
 
-        // 🌊 4. CORRIDOR SYMMETRY LOCK
+
         if (flowCorridorActive)
         {
             float lockedWave =
@@ -222,30 +211,23 @@ public class RoadState : MonoBehaviour
                 globalAmplitudeMultiplier;
 
             smoothWidth =
-                Mathf.Lerp(smoothWidth,
-                           1f,
-                           Time.deltaTime * 2f);
+                Mathf.Lerp(smoothWidth, 1f, Time.deltaTime * 2f);
         }
 
-        // 🧠 5. MOMENTUM MEMORY
-        if (directionMemoryTimer > 6f)
+        if (directionMemoryTimer > 6f && Mathf.Abs(curvature) < 0.3f)
         {
             directionMemoryTimer = 0f;
-
-            if (Mathf.Sign(targetCurvature) == Mathf.Sign(curvature))
-                directionBias *= -1f;
+            directionBias *= -1f;
         }
 
-        // 🔁 6. CURVATURE ECHO TRAILS (overshoot effect)
-        float echoForce = (targetCurvature - curvature) * 4f;
-        curvatureVelocity += echoForce * Time.deltaTime;
-        curvatureVelocity *= 0.92f;
+        // TRUE SPRING — no dampening of amplitude
+        float springForce = (targetCurvature - curvature) * 12f;
+        curvatureVelocity += springForce * Time.deltaTime;
+        curvatureVelocity *= 0.97f;
 
         curvature += curvatureVelocity * Time.deltaTime;
-        curvature = Mathf.Lerp(curvature, targetCurvature, Time.deltaTime * 3f);
         curvature = Mathf.Clamp(curvature, -1f, 1f);
 
-        // Width
         float compressionFactor = compressionActive ? 0.65f : 1f;
 
         float dynamicWidth =
@@ -253,18 +235,13 @@ public class RoadState : MonoBehaviour
             compressionFactor;
 
         smoothWidth =
-            Mathf.Lerp(smoothWidth,
-                       dynamicWidth,
-                       Time.deltaTime * 2f);
+            Mathf.Lerp(smoothWidth, dynamicWidth, Time.deltaTime * 2f);
 
-        // Banking
         float dynamicBank =
             0.7f + curvature * 0.5f;
 
         smoothBank =
-            Mathf.Lerp(smoothBank,
-                       dynamicBank,
-                       Time.deltaTime * 3f);
+            Mathf.Lerp(smoothBank, dynamicBank, Time.deltaTime * 3f);
 
         width = Mathf.Clamp01(smoothWidth);
         banking = Mathf.Clamp01(smoothBank);

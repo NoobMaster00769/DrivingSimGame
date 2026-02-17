@@ -472,7 +472,7 @@ MonoBehaviour:
   roadState: {fileID: 155815526}
   director: {fileID: 1064358333}
   player: {fileID: 48541895}
-  yawStrength: 20
+  yawStrength: 19
   chunkLength: 40
   chunksAhead: 20
   chunksBehind: 6
@@ -483,7 +483,7 @@ MonoBehaviour:
   sideWaterCount: 2
   starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
   starRoadOffsetY: 0.25
-  starWidthBleed: 1.2
+  starWidthBleed: 1.4
   starLengthBleed: 1.1
   fxBrightnessMultiplier: 1.2
   fxEmissionMultiplier: 1.5
@@ -491,7 +491,7 @@ MonoBehaviour:
   boundaryParticlePrefab: {fileID: 2459259389070916698, guid: fda31d4e6075ada4b8847638309d2076, type: 3}
   boundaryOffsetY: 0.4
   boundaryHeight: 2.5
-  boundaryThickness: 0.5
+  boundaryThickness: 0.7
   boundaryOutwardPadding: 0.2
   colliderWidthPadding: 0.4
 --- !u!4 &702803717

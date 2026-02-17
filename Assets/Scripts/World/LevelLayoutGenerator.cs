@@ -73,11 +73,21 @@ public class LevelLayoutGenerator : MonoBehaviour
         float distanceToEnd =
             Vector3.Distance(player.position, currentPosition);
 
-        if (distanceToEnd < chunkLength * chunksAhead * 0.6f)
+        // 🔥 Dynamic lookahead based on curvature intensity
+        int dynamicChunksAhead = chunksAhead;
+
+        if (roadState != null && roadState.tempest > 0.6f)
+        {
+            // During spiral/high intensity reduce prebuild distance
+            dynamicChunksAhead = Mathf.Max(6, chunksAhead / 2);
+        }
+
+        if (distanceToEnd < chunkLength * dynamicChunksAhead * 0.6f)
             SpawnNextChunk();
 
         Cleanup();
     }
+
 
     void SpawnNextChunk()
     {
@@ -96,6 +106,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         SpawnWaterGrid(chunk.transform.position);
         SpawnStarRoadFX(chunk);
 
+   
         BoxCollider roadCol = chunk.GetComponent<BoxCollider>();
         if (roadCol != null)
         {
@@ -125,16 +136,14 @@ public class LevelLayoutGenerator : MonoBehaviour
         else
             currentPosition +=
                 currentForward * (chunkLength - chunkOverlap);
-
+        // responsive but not damped
         smoothCurvature =
-     Mathf.Lerp(smoothCurvature, roadState.curvature, 0.35f);
+            Mathf.Lerp(smoothCurvature, roadState.curvature, 0.45f);
 
-        float targetTurn = smoothCurvature * 14f;
+        float targetTurn = smoothCurvature * yawStrength;
 
-        turnMomentum =
-            Mathf.Lerp(turnMomentum, targetTurn, 0.4f);
-
-        turnMomentum *= 0.995f;
+        // spring-like turn momentum (no energy loss)
+        turnMomentum += (targetTurn - turnMomentum) * 0.5f;
 
         accumulatedYaw += turnMomentum;
 
