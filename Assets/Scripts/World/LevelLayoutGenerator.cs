@@ -1,12 +1,22 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.VFX;
+using System.Collections;
 public class LevelLayoutGenerator : MonoBehaviour
 {
     public LevelChunkData firstChunk;
     public RoadState roadState;
     public WorldEventDirector director;
     public Transform player;
+
+    [Header("Sky Flow System")]
+    public Transform skyFlowRoot;
+    public VisualEffect skyFlowVFX;
+
+    public float skyFlowHeight = 80f;
+    public float skyFlowLengthMultiplier = 4f;
+    public float skyFlowFollowDistance = 120f;
+    public float skyFlowFollowSmoothness = 4f;
 
     [Header("CURVATURE STRENGTH")]
     [Range(1f, 30f)] public float yawStrength = 18f;
@@ -85,9 +95,39 @@ public class LevelLayoutGenerator : MonoBehaviour
         if (distanceToEnd < chunkLength * dynamicChunksAhead * 0.6f)
             SpawnNextChunk();
 
+        UpdateSkyFlow();
         Cleanup();
     }
+    void UpdateSkyFlow()
+    {
+        if (!skyFlowRoot || !skyFlowVFX)
+            return;
 
+        // Position ahead of player
+        Vector3 targetPos =
+            player.position +
+            currentForward * skyFlowFollowDistance;
+
+        targetPos.y = skyFlowHeight;
+
+        skyFlowRoot.position = Vector3.Lerp(
+            skyFlowRoot.position,
+            targetPos,
+            Time.deltaTime * skyFlowFollowSmoothness);
+
+        skyFlowRoot.rotation = Quaternion.Slerp(
+            skyFlowRoot.rotation,
+            Quaternion.LookRotation(currentForward, Vector3.up),
+            Time.deltaTime * skyFlowFollowSmoothness);
+
+        // Update width & length dynamically
+        float width =
+            Mathf.Lerp(1.2f, 0.85f, roadState.width);
+
+        skyFlowVFX.SetFloat("SpawnWidth", width * 10f);
+        skyFlowVFX.SetFloat("ChunkLength", chunkLength * skyFlowLengthMultiplier);
+        skyFlowVFX.SetFloat("SpawnHeight", skyFlowHeight);
+    }
 
     void SpawnNextChunk()
     {
@@ -246,7 +286,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     // UNIVERSAL FX ENHANCER
     // =========================
     void EnhanceFX(GameObject fx, float widthScale,
-                   float length, bool isStar)
+                float length, bool isStar)
     {
         ParticleSystem ps = fx.GetComponent<ParticleSystem>();
         if (ps == null) return;
@@ -255,6 +295,9 @@ public class LevelLayoutGenerator : MonoBehaviour
         var emission = ps.emission;
         var main = ps.main;
 
+        // -----------------------------
+        // SHAPE
+        // -----------------------------
         if (isStar)
         {
             float baseWidth = 10f;
@@ -275,28 +318,71 @@ public class LevelLayoutGenerator : MonoBehaviour
                 length);
         }
 
-        // 🔥 Increase density
-        emission.rateOverTime =
-            emission.rateOverTime.constant * fxEmissionMultiplier;
+        // -----------------------------
+        // EMISSION DENSITY
+        // -----------------------------
+        var rate = emission.rateOverTime;
+        emission.rateOverTime = new ParticleSystem.MinMaxCurve(
+            rate.constant * fxEmissionMultiplier);
 
-        // 🔥 Increase brightness/size
-        main.startSize =
-            main.startSize.constant * fxBrightnessMultiplier;
+        // -----------------------------
+        // SIZE VARIATION (brightness depth)
+        // -----------------------------
+        float baseSize = main.startSize.constant;
+        main.startSize = new ParticleSystem.MinMaxCurve(
+            baseSize * 1.0f,
+            baseSize * 1.35f
+        );
 
-        // 🔥 Strong sky tint influence
+        // -----------------------------
+        // COSMIC COLOR WITH VARIATION
+        // -----------------------------
+        Color coolWhite = new Color(0.85f, 0.92f, 1f);
+        Color softCyan = new Color(0.6f, 0.85f, 1f);
+        Color softBlue = new Color(0.5f, 0.7f, 1f);
+
+        // Blend base cosmic palette
+        Color midTone = Color.Lerp(coolWhite, softCyan, 0.5f);
+
+        // Slight sky influence
         if (RenderSettings.skybox != null)
         {
-            Color skyTint =
-                RenderSettings.skybox.GetColor("_Tint");
-
-            Color blended =
-                Color.Lerp(Color.white, skyTint, skyTintBlend);
-
-            // slight HDR boost
-            blended *= 1.3f;
-
-            main.startColor = blended;
+            Color skyTint = RenderSettings.skybox.GetColor("_Tint");
+            midTone = Color.Lerp(midTone, skyTint, 0.25f);
         }
+
+        // Controlled HDR boost
+        midTone *= 1.1f;
+
+        Color minColor = Color.Lerp(midTone, softBlue, 0.3f);
+        Color maxColor = Color.Lerp(midTone, coolWhite, 0.2f);
+
+        main.startColor = new ParticleSystem.MinMaxGradient(minColor, maxColor);
+
+        // -----------------------------
+        // FADE-IN (smooth and natural)
+        // -----------------------------
+        var colorOverLifetime = ps.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+
+        Gradient grad = new Gradient();
+
+        grad.SetKeys(
+            new GradientColorKey[]
+            {
+            new GradientColorKey(Color.white, 0f),
+            new GradientColorKey(Color.white, 1f)
+            },
+            new GradientAlphaKey[]
+            {
+            new GradientAlphaKey(0f, 0f),
+            new GradientAlphaKey(0.85f, 0.25f),
+            new GradientAlphaKey(1f, 1f)
+            }
+        );
+
+        colorOverLifetime.color =
+            new ParticleSystem.MinMaxGradient(grad);
     }
 
     void SpawnWaterGrid(Vector3 basePosition)
