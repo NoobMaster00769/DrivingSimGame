@@ -184,6 +184,10 @@ public class LevelLayoutGenerator : MonoBehaviour
             chunkLength + chunkOverlap,
             true
         );
+        
+        var fade = fx.AddComponent<ChunkDistanceFade>();
+        fade.player = player;
+        fade.maxDistance = chunkLength * 5f;
     }
 
 
@@ -244,6 +248,10 @@ public class LevelLayoutGenerator : MonoBehaviour
             fx.transform.parent = parent; // 🔥 THIS IS THE FIX
 
             EnhanceFX(fx, 1f, length + chunkOverlap, false);
+
+            var fade = fx.AddComponent<ChunkDistanceFade>();
+            fade.player = player;
+            fade.maxDistance = chunkLength * 5f;
         }
 
     }
