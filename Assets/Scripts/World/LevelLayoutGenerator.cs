@@ -9,14 +9,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     public WorldEventDirector director;
     public Transform player;
 
-    [Header("Sky Flow System")]
-    public Transform skyFlowRoot;
-    public VisualEffect skyFlowVFX;
 
-    public float skyFlowHeight = 80f;
-    public float skyFlowLengthMultiplier = 4f;
-    public float skyFlowFollowDistance = 120f;
-    public float skyFlowFollowSmoothness = 4f;
 
     [Header("CURVATURE STRENGTH")]
     [Range(1f, 30f)] public float yawStrength = 18f;
@@ -95,38 +88,8 @@ public class LevelLayoutGenerator : MonoBehaviour
         if (distanceToEnd < chunkLength * dynamicChunksAhead * 0.6f)
             SpawnNextChunk();
 
-        UpdateSkyFlow();
+
         Cleanup();
-    }
-    void UpdateSkyFlow()
-    {
-        if (!skyFlowRoot || !skyFlowVFX)
-            return;
-
-        // Position ahead of player
-        Vector3 targetPos =
-            player.position +
-            currentForward * skyFlowFollowDistance;
-
-        targetPos.y = skyFlowHeight;
-
-        skyFlowRoot.position = Vector3.Lerp(
-            skyFlowRoot.position,
-            targetPos,
-            Time.deltaTime * skyFlowFollowSmoothness);
-
-        skyFlowRoot.rotation = Quaternion.Slerp(
-            skyFlowRoot.rotation,
-            Quaternion.LookRotation(currentForward, Vector3.up),
-            Time.deltaTime * skyFlowFollowSmoothness);
-
-        // Update width & length dynamically
-        float width =
-            Mathf.Lerp(1.2f, 0.85f, roadState.width);
-
-        skyFlowVFX.SetFloat("SpawnWidth", width * 10f);
-        skyFlowVFX.SetFloat("ChunkLength", chunkLength * skyFlowLengthMultiplier);
-        skyFlowVFX.SetFloat("SpawnHeight", skyFlowHeight);
     }
 
     void SpawnNextChunk()
@@ -146,7 +109,6 @@ public class LevelLayoutGenerator : MonoBehaviour
         SpawnWaterGrid(chunk.transform.position);
         SpawnStarRoadFX(chunk);
 
-   
         BoxCollider roadCol = chunk.GetComponent<BoxCollider>();
         if (roadCol != null)
         {
@@ -216,10 +178,14 @@ public class LevelLayoutGenerator : MonoBehaviour
             new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
         fx.transform.localRotation = Quaternion.identity;
 
-        EnhanceFX(fx, chunk.transform.localScale.x,
-                  chunkLength + chunkOverlap,
-                  true);
+        EnhanceFX(
+            fx,
+            chunk.transform.localScale.x,
+            chunkLength + chunkOverlap,
+            true
+        );
     }
+
 
     // =========================
     // BOUNDARY FX ENHANCED

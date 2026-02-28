@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8949247750820504935}
-  - component: {fileID: 2328014992791847538}
-  - component: {fileID: 6418140678128919337}
+  - component: {fileID: 7063703004824109872}
+  - component: {fileID: 6402257701083838492}
   m_Layer: 0
   m_Name: StarRoadFX
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!198 &2328014992791847538
+--- !u!198 &7063703004824109872
 ParticleSystem:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4756,7 +4756,7 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!199 &6418140678128919337
+--- !u!199 &6402257701083838492
 ParticleSystemRenderer:
   serializedVersion: 6
   m_ObjectHideFlags: 0
