@@ -9,7 +9,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     public WorldEventDirector director;
     public Transform player;
 
-
+    [Header("Star Road Depth FX")]
+    public GameObject starRoadDepthPrefab;
+    public float starDepthOffsetY = 0.35f;
 
     [Header("CURVATURE STRENGTH")]
     [Range(1f, 30f)] public float yawStrength = 18f;
@@ -188,6 +190,32 @@ public class LevelLayoutGenerator : MonoBehaviour
         var fade = fx.AddComponent<ChunkDistanceFade>();
         fade.player = player;
         fade.maxDistance = chunkLength * 5f;
+        // =========================
+        // COSMIC DEPTH LAYER
+        // =========================
+        if (starRoadDepthPrefab)
+        {
+            GameObject depth =
+                Instantiate(starRoadDepthPrefab);
+
+            depth.transform.parent = chunk.transform;
+
+            depth.transform.localPosition =
+                new Vector3(0f, starDepthOffsetY, 0f);
+
+            depth.transform.localRotation = Quaternion.identity;
+
+            EnhanceFX(
+                depth,
+                chunk.transform.localScale.x,
+                chunkLength + chunkOverlap,
+                true
+            );
+
+            var fade2 = depth.AddComponent<ChunkDistanceFade>();
+            fade2.player = player;
+            fade2.maxDistance = chunkLength * 6f;
+        }
     }
 
 

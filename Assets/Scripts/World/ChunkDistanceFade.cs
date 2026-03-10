@@ -39,6 +39,16 @@ public class ChunkDistanceFade : MonoBehaviour
             emission.rateOverTime =
                 new ParticleSystem.MinMaxCurve(baseRates[i] * intensity * brightnessBoost);
 
+            // subtle cosmic drift
+            var noise = ps.noise;
+            noise.enabled = true;
+
+            noise.strength = Mathf.Lerp(0.05f, 0.18f, 1f - intensity);
+            noise.frequency = 0.25f;
+
+            // very slow backward flow so stars appear to materialize forward
+            noise.scrollSpeed = Mathf.Lerp(0.02f, 0.12f, 1f - intensity);
+
             // forward spawn shift
             var shape = ps.shape;
 
