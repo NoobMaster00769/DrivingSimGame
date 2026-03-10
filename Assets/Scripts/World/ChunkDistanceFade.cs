@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ChunkDistanceFade : MonoBehaviour
 {
@@ -25,20 +25,30 @@ public class ChunkDistanceFade : MonoBehaviour
         if (!player) return;
 
         float dist = Vector3.Distance(player.position, transform.position);
-
         float t = Mathf.Clamp01(1f - (dist / maxDistance));
 
-        // curve it so it ramps stronger near player
-        float intensity = Mathf.Pow(t, 0.6f);   // <--- makes it appear earlier
-
+        float intensity = Mathf.Pow(t, 0.6f);
         float brightnessBoost = Mathf.Lerp(1f, 1.6f, intensity);
-        // 1.6 = 60% brighter when close
 
         for (int i = 0; i < systems.Length; i++)
         {
-            var emission = systems[i].emission;
+            var ps = systems[i];
+
+            // emission fade
+            var emission = ps.emission;
             emission.rateOverTime =
                 new ParticleSystem.MinMaxCurve(baseRates[i] * intensity * brightnessBoost);
+
+            // forward spawn shift
+            var shape = ps.shape;
+
+            float length = shape.scale.z;
+
+            shape.position = new Vector3(
+                0f,
+                0f,
+                Mathf.Lerp(length * 0.45f, 0f, intensity)
+            );
         }
     }
 }
