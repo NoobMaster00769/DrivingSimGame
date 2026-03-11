@@ -181,7 +181,8 @@ public class LevelLayoutGenerator : MonoBehaviour
         fx.transform.parent = chunk.transform;
         fx.transform.localPosition =
             new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
-        fx.transform.localRotation = Quaternion.identity;
+        fx.transform.rotation =
+            Quaternion.LookRotation(currentForward, Vector3.up);
 
         EnhanceFX(
             fx,
@@ -206,7 +207,8 @@ public class LevelLayoutGenerator : MonoBehaviour
             depth.transform.localPosition =
                 new Vector3(0f, starDepthOffsetY, chunkLength * 0.45f);
 
-            depth.transform.localRotation = Quaternion.identity;
+            depth.transform.rotation =
+                Quaternion.LookRotation(currentForward, Vector3.up);
 
             EnhanceFX(
                 depth,

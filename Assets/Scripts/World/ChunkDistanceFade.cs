@@ -27,26 +27,22 @@ public class ChunkDistanceFade : MonoBehaviour
         float dist = Vector3.Distance(player.position, transform.position);
         float t = Mathf.Clamp01(1f - (dist / maxDistance));
 
-        float intensity = Mathf.SmoothStep(0f, 1f, t);
+        float intensity = Mathf.SmoothStep(0f, 1f, t * 1.2f);
         float brightnessBoost = Mathf.Lerp(1f, 1.6f, intensity);
 
         for (int i = 0; i < systems.Length; i++)
         {
             var ps = systems[i];
 
+            var noise = ps.noise;
+            if (noise.enabled)
+            {
+                noise.frequency = noise.frequency;
+            }
             // emission fade
             var emission = ps.emission;
             emission.rateOverTime =
                 new ParticleSystem.MinMaxCurve(baseRates[i] * intensity * brightnessBoost);
-
-
-            // ⭐ cosmic drift
-            var noise = ps.noise;
-            noise.enabled = true;
-
-            noise.strength = Mathf.Lerp(0.04f, 0.12f, 1f - intensity);
-            noise.frequency = 0.25f;
-            noise.scrollSpeed = Mathf.Lerp(0.02f, 0.08f, 1f - intensity);
 
             // ⭐ forward painting illusion
             var shape = ps.shape;

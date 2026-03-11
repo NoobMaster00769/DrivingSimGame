@@ -5,33 +5,51 @@ public class CarFollowCamera : MonoBehaviour
 {
     public Transform target;
 
-    [Header("Framing")]
-    public Vector3 baseOffset = new Vector3(0f, 6.8f, -10f);
-    public float verticalBias = -3.5f;
+    [Header("Speed FOV")]
+    public float baseFOV = 55f;
+    public float speedFOV = 6f;
+    public float fovSmooth = 2f;
 
-    [Header("Weight")]
-    public float positionSmooth = 1.6f;
-    public float rotationSmooth = 1.8f;
+    [Header("Framing")]
+    public Vector3 baseOffset = new Vector3(0f, 7f, -11f);
+
+    [Header("Follow")]
+    public float positionSmooth = 3.5f;
+    public float rotationSmooth = 3.2f;
 
     [Header("Look Ahead")]
-    public float lookAheadDistance = 22f;
-    public float lookAheadSmooth = 1.1f;
+    public float lookAheadDistance = 26f;
+    public float lookAheadSmooth = 3f;
+
+    [Header("Turn Banking")]
+    public float bankAmount = 8f;
+    public float bankSmooth = 3f;
+
+    [Header("Breathing Motion")]
+    public float breathAmount = 0.35f;
+    public float breathSpeed = 0.35f;
 
     [Header("Cosmic Drift")]
-    public float horizonTiltAmount = 0.4f;
-    public float horizonTiltSpeed = 0.015f;
+    public float driftAmount = 0.25f;
+    public float driftSpeed = 0.12f;
 
-    [Header("Subtle Presence Breathing")]
-    public float presenceBreathAmount = 0.25f;
-    public float presenceBreathSpeed = 0.035f;
+    [Header("Suspension Motion")]
+    public float suspensionAmount = 0.18f;
+    public float suspensionSpeed = 6f;
+
+    [Header("Turn Anticipation")]
+    public float anticipationAmount = 3f;
+
+    float suspensionTimer;
 
     Camera cam;
     Rigidbody rb;
 
-    float horizonTimer;
-    float breathTimer;
-
+    Vector3 velocity;
     Vector3 smoothLookDir;
+
+    float breathTimer;
+    float driftTimer;
 
     void Start()
     {
@@ -40,43 +58,64 @@ public class CarFollowCamera : MonoBehaviour
         if (target)
             rb = target.GetComponent<Rigidbody>();
 
-        if (target)
-            smoothLookDir = target.forward;
+        smoothLookDir = target.forward;
 
-        cam.fieldOfView = 56f; // cinematic compression
+        cam.fieldOfView = 55f;
     }
 
     void LateUpdate()
     {
         if (!target) return;
 
-        horizonTimer += Time.deltaTime * horizonTiltSpeed;
-        breathTimer += Time.deltaTime * presenceBreathSpeed;
+        breathTimer += Time.deltaTime * breathSpeed;
+        driftTimer += Time.deltaTime * driftSpeed;
 
-        // -------------------------------
-        // POSITION (Closer but Elevated)
-        // -------------------------------
+        //---------------------------------
+        // FOLLOW POSITION
+        //---------------------------------
 
-        Vector3 desiredPos =
-            target.TransformPoint(baseOffset);
+        Vector3 desiredPosition = target.TransformPoint(baseOffset);
 
-        float breath =
-            Mathf.Sin(breathTimer) * presenceBreathAmount;
+        // breathing motion (camera subtly moves forward/back)
+        float breath = Mathf.Sin(breathTimer) * breathAmount;
+        desiredPosition += target.forward * breath;
 
-        desiredPos += target.forward * breath;
+        float speed = rb ? rb.velocity.magnitude : 0f;
 
-        transform.position = Vector3.Lerp(
-            transform.position,
-            desiredPos,
-            Time.deltaTime * positionSmooth
+        float targetFOV =
+            baseFOV + Mathf.Clamp(speed * 0.15f, 0f, speedFOV);
+
+        cam.fieldOfView = Mathf.Lerp(
+            cam.fieldOfView,
+            targetFOV,
+            Time.deltaTime * fovSmooth
         );
 
-        // -------------------------------
+
+        suspensionTimer += Time.deltaTime * suspensionSpeed;
+
+        float suspension =
+            Mathf.Sin(suspensionTimer) * suspensionAmount;
+
+        desiredPosition += target.up * suspension;
+
+        // cosmic floating drift
+        float drift = Mathf.Sin(driftTimer) * driftAmount;
+        desiredPosition += target.right * drift;
+
+        transform.position = Vector3.SmoothDamp(
+            transform.position,
+            desiredPosition,
+            ref velocity,
+            1f / positionSmooth
+        );
+
+        //---------------------------------
         // LOOK AHEAD
-        // -------------------------------
+        //---------------------------------
 
         Vector3 forwardDir =
-            rb && rb.velocity.sqrMagnitude > 0.1f
+            rb && rb.velocity.sqrMagnitude > 0.5f
             ? rb.velocity.normalized
             : target.forward;
 
@@ -86,9 +125,13 @@ public class CarFollowCamera : MonoBehaviour
             Time.deltaTime * lookAheadSmooth
         );
 
+        Vector3 turnOffset =
+    target.right * Vector3.Dot(target.right, smoothLookDir) * anticipationAmount;
+
         Vector3 lookPoint =
             target.position +
-            smoothLookDir * lookAheadDistance;
+            smoothLookDir * lookAheadDistance +
+            turnOffset;
 
         Quaternion baseRotation =
             Quaternion.LookRotation(
@@ -96,22 +139,26 @@ public class CarFollowCamera : MonoBehaviour
                 Vector3.up
             );
 
-        // -------------------------------
-        // Subtle Cosmic Horizon Drift
-        // -------------------------------
+        //---------------------------------
+        // CAMERA BANKING (emotion)
+        //---------------------------------
 
-        float tilt =
-            Mathf.Sin(horizonTimer) * horizonTiltAmount;
+        float sideways =
+            Vector3.Dot(target.right, smoothLookDir);
 
-        Quaternion roll =
-            Quaternion.AngleAxis(tilt, Vector3.forward);
+        float bank =
+            Mathf.Clamp(-sideways * bankAmount, -bankAmount, bankAmount);
 
-        Quaternion pitchBias =
-            Quaternion.AngleAxis(verticalBias, Vector3.right);
+        Quaternion bankRot =
+            Quaternion.AngleAxis(bank, Vector3.forward);
+
+        //---------------------------------
+        // APPLY ROTATION
+        //---------------------------------
 
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
-            baseRotation * roll * pitchBias,
+            baseRotation * bankRot,
             Time.deltaTime * rotationSmooth
         );
     }
