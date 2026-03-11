@@ -96,9 +96,12 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     void SpawnNextChunk()
     {
-        currentForward =
+        Vector3 targetForward =
             Quaternion.Euler(0f, accumulatedYaw, 0f) *
             Vector3.forward;
+
+        currentForward =
+            Vector3.Slerp(currentForward, targetForward, 0.65f);
 
         Quaternion roadRotation =
             Quaternion.LookRotation(currentForward, Vector3.up);
@@ -201,7 +204,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             depth.transform.parent = chunk.transform;
 
             depth.transform.localPosition =
-                new Vector3(0f, starDepthOffsetY, 0f);
+                new Vector3(0f, starDepthOffsetY, chunkLength * 0.45f);
 
             depth.transform.localRotation = Quaternion.identity;
 

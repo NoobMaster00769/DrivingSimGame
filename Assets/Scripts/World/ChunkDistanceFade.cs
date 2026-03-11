@@ -27,7 +27,7 @@ public class ChunkDistanceFade : MonoBehaviour
         float dist = Vector3.Distance(player.position, transform.position);
         float t = Mathf.Clamp01(1f - (dist / maxDistance));
 
-        float intensity = Mathf.Pow(t, 0.6f);
+        float intensity = Mathf.SmoothStep(0f, 1f, t);
         float brightnessBoost = Mathf.Lerp(1f, 1.6f, intensity);
 
         for (int i = 0; i < systems.Length; i++)
@@ -39,17 +39,16 @@ public class ChunkDistanceFade : MonoBehaviour
             emission.rateOverTime =
                 new ParticleSystem.MinMaxCurve(baseRates[i] * intensity * brightnessBoost);
 
-            // subtle cosmic drift
+
+            // ⭐ cosmic drift
             var noise = ps.noise;
             noise.enabled = true;
 
-            noise.strength = Mathf.Lerp(0.05f, 0.18f, 1f - intensity);
+            noise.strength = Mathf.Lerp(0.04f, 0.12f, 1f - intensity);
             noise.frequency = 0.25f;
+            noise.scrollSpeed = Mathf.Lerp(0.02f, 0.08f, 1f - intensity);
 
-            // very slow backward flow so stars appear to materialize forward
-            noise.scrollSpeed = Mathf.Lerp(0.02f, 0.12f, 1f - intensity);
-
-            // forward spawn shift
+            // ⭐ forward painting illusion
             var shape = ps.shape;
 
             float length = shape.scale.z;
