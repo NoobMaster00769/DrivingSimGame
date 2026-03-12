@@ -73,9 +73,11 @@ public class WorldVisualController : MonoBehaviour
 
         float t = arcTimer / arcDuration;
 
-        Color c =
-            arcGradients[arcIndex].Evaluate(t);
+        Color c = arcGradients[arcIndex].Evaluate(t);
 
         RenderSettings.skybox.SetColor("_Tint", c);
+
+        // ⭐ Force realtime environment update
+        DynamicGI.UpdateEnvironment();
     }
 }

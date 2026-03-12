@@ -1,9 +1,18 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+enum ArcPhase
+{
+    Calm,
+    Flow,
+    Intense
+}
+
 public class WorldEventDirector : MonoBehaviour
 {
     public RoadState road;
+
+    ArcPhase currentPhase;
 
     [Header("Arc Settings")]
     public float arcDuration = 120f;
@@ -42,16 +51,51 @@ public class WorldEventDirector : MonoBehaviour
             BeginNewArc();
     }
 
+    public string CurrentArcName
+    {
+        get
+        {
+            switch (currentArcIndex)
+            {
+                case 0: return "Calm";
+                case 1: return "Pulse";
+                case 2: return "Ribbon";
+                case 3: return "Chaotic";
+                case 4: return "Dream";
+                case 5: return "Surge";
+                case 6: return "Drift";
+            }
+            return "Unknown";
+        }
+    }
+
     void GenerateArcOrder()
     {
         arcOrder.Clear();
-        List<int> temp = new() { 0, 1, 2, 3, 4, 5, 6 };
 
-        while (temp.Count > 0)
+        switch (currentPhase)
         {
-            int r = Random.Range(0, temp.Count);
-            arcOrder.Add(temp[r]);
-            temp.RemoveAt(r);
+            case ArcPhase.Calm:
+                arcOrder.AddRange(new int[] { 0, 4, 6 });
+                currentPhase = ArcPhase.Flow;
+                break;
+
+            case ArcPhase.Flow:
+                arcOrder.AddRange(new int[] { 1, 2, 6 });
+                currentPhase = ArcPhase.Intense;
+                break;
+
+            case ArcPhase.Intense:
+                arcOrder.AddRange(new int[] { 3, 5, 2 });
+                currentPhase = ArcPhase.Calm;
+                break;
+        }
+
+        // shuffle inside phase
+        for (int i = 0; i < arcOrder.Count; i++)
+        {
+            int r = Random.Range(i, arcOrder.Count);
+            (arcOrder[i], arcOrder[r]) = (arcOrder[r], arcOrder[i]);
         }
     }
 
@@ -106,10 +150,22 @@ public class WorldEventDirector : MonoBehaviour
                 road.rhythmIntensity = 1.5f;
                 break;
 
-            default:
+            case 4: // Dream (very meditative)
+                road.arcAmplitude = 0.45f;
+                road.arcFrequency = 0.4f;
+                road.rhythmIntensity = 0.55f;
+                break;
+
+            case 5: // Surge (long sweeping curves)
+                road.arcAmplitude = 1.2f;
+                road.arcFrequency = 0.8f;
+                road.rhythmIntensity = 1.35f;
+                break;
+
+            case 6: // Drift (slow drifting road)
                 road.arcAmplitude = 0.8f;
-                road.arcFrequency = 1.0f;
-                road.rhythmIntensity = 1.0f;
+                road.arcFrequency = 0.35f;
+                road.rhythmIntensity = 0.8f;
                 break;
         }
     }
