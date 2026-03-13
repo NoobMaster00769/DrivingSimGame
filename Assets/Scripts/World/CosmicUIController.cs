@@ -8,6 +8,13 @@ public class CosmicUIController : MonoBehaviour
     public VehicleContext vehicle;
     public Camera mainCamera;
 
+    [Header("Startup Reveal")]
+    public float revealDuration = 2.5f;
+
+    float revealTimer;
+    float revealFactor = 0f;
+
+
     [Header("Sky Placement")]
     public float skyDistance = 1000f;
     public float skyHeight = 300f;
@@ -49,11 +56,6 @@ public class CosmicUIController : MonoBehaviour
     public GameObject starPrefab;
     public Material lineMaterial;
 
-    [Header("Redline Cosmic Ripple")]
-    public float rippleSpeed = 1.5f;
-    public float rippleWidth = 0.08f;
-    public float rippleBrightness = 1.5f;
-    public float rippleThicknessBoost = 0.4f;
 
     List<Renderer> arcStars = new();
     List<Renderer> hazeStars = new();
@@ -63,8 +65,6 @@ public class CosmicUIController : MonoBehaviour
     Transform arcRoot;
     Transform glyphRoot;
 
-    Transform rpmAuraRoot;
-    Renderer rpmAuraRenderer;
 
     int lastGear = -99;
 
@@ -80,8 +80,20 @@ public class CosmicUIController : MonoBehaviour
         if (!vehicle || !mainCamera) return;
 
         AnchorToSky();
+
+        UpdateReveal();
+
         UpdateArcFill();
         UpdateGlyph();
+    }
+
+    void UpdateReveal()
+    {
+        if (revealFactor < 1f)
+        {
+            revealTimer += Time.deltaTime;
+            revealFactor = Mathf.Clamp01(revealTimer / revealDuration);
+        }
     }
 
     void Update()
@@ -99,10 +111,13 @@ public class CosmicUIController : MonoBehaviour
     // ==================================================
     void AnchorToSky()
     {
-        transform.position =
+        Vector3 targetPos =
             mainCamera.transform.position +
             mainCamera.transform.forward * skyDistance +
             Vector3.up * skyHeight;
+
+        transform.position =
+            Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 2f);
 
         transform.rotation =
             Quaternion.LookRotation(
@@ -252,7 +267,7 @@ public class CosmicUIController : MonoBehaviour
                 Mathf.Sin(Time.time * rpmShimmerSpeed + i * 0.3f)
                 * rpmNorm * rpmShimmerIntensity;
 
-            float targetAlpha = baseAlpha + shimmer;
+            float targetAlpha = (baseAlpha + shimmer) * revealFactor;
 
             // Redline pulse (purely brightness + slight thickness)
             if (inRedline && lit)
