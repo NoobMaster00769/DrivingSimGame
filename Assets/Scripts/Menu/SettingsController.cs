@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CelestialMenuController : MonoBehaviour
+public class SettingsMenuController : MonoBehaviour
 {
     public Transform[] options;
     public StarHaloGenerator[] halos;
@@ -30,7 +30,6 @@ public class CelestialMenuController : MonoBehaviour
         var manager = FindObjectOfType<MenuManager>();
         if (manager != null && manager.IsTransitioning())
             return;
-        if (GameStateController.Instance.currentState != GameState.StartMenu) return;
 
         timer += Time.deltaTime;
 
@@ -99,20 +98,12 @@ public class CelestialMenuController : MonoBehaviour
     void ActivateOption()
     {
         if (index == 0)
-            StartGame();
+            Debug.Log("Control Settings");
 
         if (index == 1)
-            Debug.Log("Tutorial");
+            FindObjectOfType<MenuManager>().OpenMenu(0);
 
         if (index == 2)
-            Application.Quit();
-
-        if (index == 3)
-            FindObjectOfType<MenuManager>().OpenMenu(1);
-    }
-
-    void StartGame()
-    {
-        FindObjectOfType<MenuCameraRig>().StartTransition();
+            Debug.Log("Audio Settings");
     }
 }
