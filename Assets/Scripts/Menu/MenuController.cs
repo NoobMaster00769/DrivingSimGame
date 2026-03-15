@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections;
 public class CelestialMenuController : MonoBehaviour
 {
     public Transform[] options;
@@ -19,10 +19,16 @@ public class CelestialMenuController : MonoBehaviour
     {
         index = Mathf.Clamp(index, 0, options.Length - 1);
 
+        StartCoroutine(InitializeHalo());
+    }
+
+    IEnumerator InitializeHalo()
+    {
+        yield return null; // wait 1 frame
+
         if (halos.Length > index)
             halos[index].Highlight(true);
     }
-
     void Update()
     {
         if (!enabled) return;
@@ -64,7 +70,7 @@ public class CelestialMenuController : MonoBehaviour
 
         var flash = guidingStar.GetComponent<GuidingStarFlash>();
         if (flash) flash.TriggerFlash();
-
+        halos[index].Pulse();
         timer = 0;
     }
 

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 public class StarHaloGenerator : MonoBehaviour
 {
     public GameObject starPrefab;
+    
+    float pulse;
 
     [Header("Halo Structure")]
     public int starsPerLayer = 8;
@@ -98,6 +100,25 @@ public class StarHaloGenerator : MonoBehaviour
 
     void Update()
     {
+
+        if (pulse > 0)
+        {
+            pulse -= Time.deltaTime * 4f;
+
+            float scale = 1f + pulse * 0.25f;
+
+            transform.localScale = Vector3.one * scale;
+        }
+        else
+        {
+            transform.localScale =
+                Vector3.Lerp(
+                    transform.localScale,
+                    Vector3.one,
+                    Time.deltaTime * 4f
+                );
+        }
+
         float wobble =
     Mathf.Sin(Time.time * 0.6f) * 0.03f;
 
@@ -112,16 +133,25 @@ public class StarHaloGenerator : MonoBehaviour
 
     void UpdateConstellation()
     {
+        if (constellationLine == null) return;
+
         for (int i = 0; i < midStars.Count; i++)
         {
             constellationLine.SetPosition(i, midStars[i].position);
         }
     }
 
+    public void Pulse()
+    {
+        pulse = 1f;
+    }
+
     public void Highlight(bool active)
     {
         innerSpeed = active ? 120f : 80f;
         midSpeed = active ? 60f : 40f;
+
+        if (constellationLine == null) return;
 
         Color c =
             active

@@ -49,7 +49,7 @@ public class MenuManager : MonoBehaviour
         nextMenu = menuControllers[index];
         nextT = nextMenu.transform;
 
-        // prepare next menu
+
         nextMenu.gameObject.SetActive(true);
         nextMenu.enabled = false;
 
@@ -67,16 +67,32 @@ public class MenuManager : MonoBehaviour
         timer += Time.deltaTime;
 
         float t = Mathf.Clamp01(timer / slideDuration);
+        float curveHeight = 10f;
+        float stretch = 1.15f;
 
-        Vector3 currentTarget = new Vector3(-direction * slideDistance, 0, 0);
-        Vector3 nextTarget = Vector3.zero;
+        Vector3 currentStart = Vector3.zero;
+        Vector3 currentEnd = new Vector3(-direction * slideDistance, 0, 0);
 
-        currentT.localPosition =
-            Vector3.Lerp(Vector3.zero, currentTarget, t);
+        Vector3 nextStart = new Vector3(direction * slideDistance, 0, 0);
+        Vector3 nextEnd = Vector3.zero;
 
-        nextT.localPosition =
-            Vector3.Lerp(new Vector3(direction * slideDistance, 0, 0), nextTarget, t);
+        // curved path
+        Vector3 currentPos =
+            Vector3.Lerp(currentStart, currentEnd, t)
+            + Vector3.up * Mathf.Sin(t * Mathf.PI) * curveHeight;
 
+        Vector3 nextPos =
+            Vector3.Lerp(nextStart, nextEnd, t)
+            + Vector3.up * Mathf.Sin(t * Mathf.PI) * curveHeight;
+
+        currentT.localPosition = currentPos;
+        nextT.localPosition = nextPos;
+
+        // hyperspace stretch effect
+        float scaleWarp = 1 + Mathf.Sin(t * Mathf.PI) * (stretch - 1);
+
+        currentT.localScale = Vector3.one * scaleWarp;
+        nextT.localScale = Vector3.one * scaleWarp;
         if (t >= 1f)
         {
             FinishTransition();
@@ -85,7 +101,18 @@ public class MenuManager : MonoBehaviour
 
     void FinishTransition()
     {
+        currentT.localScale = Vector3.one;
+
+        nextT.localScale = Vector3.one;
+
         // hide previous menu completely
+        var halos = currentMenu.GetComponentsInChildren<StarHaloGenerator>();
+
+        foreach (var h in halos)
+        {
+            h.Pulse();
+        }
+
         currentMenu.gameObject.SetActive(false);
 
         // activate new menu

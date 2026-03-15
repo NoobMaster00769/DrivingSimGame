@@ -8749,9 +8749,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   starPrefab: {fileID: 1809802460567072781, guid: fa84099cc1c7a4a478fd4338c8d5fc89, type: 3}
   starsPerLayer: 15
-  innerRadius: 80
-  midRadius: 100
-  outerRadius: 120
+  innerRadius: 110
+  midRadius: 130
+  outerRadius: 150
   noiseAmount: 0.8
   innerSpeed: 80
   midSpeed: 40
@@ -9542,9 +9542,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   starPrefab: {fileID: 1809802460567072781, guid: fa84099cc1c7a4a478fd4338c8d5fc89, type: 3}
   starsPerLayer: 15
-  innerRadius: 80
-  midRadius: 100
-  outerRadius: 120
+  innerRadius: 110
+  midRadius: 130
+  outerRadius: 150
   noiseAmount: 0.8
   innerSpeed: 80
   midSpeed: 40

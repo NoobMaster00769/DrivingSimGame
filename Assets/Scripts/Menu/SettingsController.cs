@@ -63,7 +63,7 @@ public class SettingsMenuController : MonoBehaviour
 
         var flash = guidingStar.GetComponent<GuidingStarFlash>();
         if (flash) flash.TriggerFlash();
-
+        halos[index].Pulse();
         timer = 0;
     }
 
