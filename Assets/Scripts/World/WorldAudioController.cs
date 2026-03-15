@@ -28,6 +28,7 @@ public class WorldAudioController : MonoBehaviour
 
     [Header("Global Mix")]
     [Range(0f, 1f)] public float masterVolume = 0.85f;
+    [Range(0f, 1f)] public float bgmVolume = 1f;
 
     int currentArc = -1;
     bool usingA = true;
@@ -91,8 +92,8 @@ public class WorldAudioController : MonoBehaviour
             t += Time.deltaTime;
             float k = t / 5f;
 
-            a.volume = Mathf.Lerp(targetVolume, 0f, k) * masterVolume;
-            b.volume = Mathf.Lerp(0f, targetVolume, k) * masterVolume;
+            a.volume = Mathf.Lerp(targetVolume, 0f, k) * masterVolume * bgmVolume;
+            b.volume = Mathf.Lerp(0f, targetVolume, k) * masterVolume * bgmVolume;
 
             yield return null;
         }

@@ -104,6 +104,6 @@ public class SettingsMenuController : MonoBehaviour
             FindObjectOfType<MenuManager>().OpenMenu(0);
 
         if (index == 2)
-            Debug.Log("Audio Settings");
+            FindObjectOfType<MenuManager>().OpenMenu(2);
     }
 }
