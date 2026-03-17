@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class SettingsMenuController : MonoBehaviour
+public class ControlsMenuController : MonoBehaviour
 {
     public Transform[] options;
     public StarHaloGenerator[] halos;
@@ -50,20 +50,18 @@ public class SettingsMenuController : MonoBehaviour
 
     void ChangeIndex(int direction)
     {
-        if (halos.Length > index)
-            halos[index].Highlight(false);
+        halos[index].Highlight(false);
 
         index += direction;
 
         if (index >= options.Length) index = 0;
         if (index < 0) index = options.Length - 1;
 
-        if (halos.Length > index)
-            halos[index].Highlight(true);
+        halos[index].Highlight(true);
 
-        var flash = guidingStar.GetComponent<GuidingStarFlash>();
-        if (flash) flash.TriggerFlash();
+        guidingStar.GetComponent<GuidingStarFlash>()?.TriggerFlash();
         halos[index].Pulse();
+
         timer = 0;
     }
 
@@ -97,15 +95,10 @@ public class SettingsMenuController : MonoBehaviour
 
     void ActivateOption()
     {
-        if (index == 0)
-            FindObjectOfType<MenuManager>().OpenMenu(3);
+        var manager = FindObjectOfType<MenuManager>();
 
-        if (index == 1)
-            FindObjectOfType<MenuManager>().OpenMenu(0);
-
-        if (index == 2)
-            FindObjectOfType<MenuManager>().OpenMenu(2);
+        if (index == 0) manager.OpenMenu(4); // Keyboard
+        if (index == 2) manager.OpenMenu(5); // Controller
+        if (index == 1) manager.OpenMenu(1); // Back
     }
-
-
 }

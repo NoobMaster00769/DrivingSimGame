@@ -145,6 +145,15 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""0ca5a265-5ba9-4086-bbcb-bfb2a383b886"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -171,9 +180,31 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""negative"",
+                    ""id"": ""3bcf8719-ddb1-453c-929a-8222c62d498d"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throttle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": ""positive"",
                     ""id"": ""8d85e744-eeb3-419b-863f-b9d554da3c96"",
                     ""path"": ""<Keyboard>/w"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throttle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""beb58706-da05-491a-bb02-25602322c225"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -204,9 +235,31 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""negative"",
+                    ""id"": ""88befb98-3236-43cb-84c2-75e78c6aa232"",
+                    ""path"": ""<Gamepad>/leftStick/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Steering"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": ""positive"",
                     ""id"": ""45b282a2-8ea4-457b-b0ec-268c0ac76234"",
                     ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Steering"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""3b07d978-ce32-45ee-9e9e-e924543b4551"",
+                    ""path"": ""<Gamepad>/leftStick/right"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -227,8 +280,30 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""cba88cc5-2f25-4e44-ab78-d48748e12ab6"",
+                    ""path"": ""<Gamepad>/buttonEast"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Brake"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""f2f74ffc-d624-400c-87ec-4e3cdfd43694"",
                     ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Clutch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8163bfea-e9e6-4039-b19d-fbbe29108054"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -249,12 +324,45 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""bbb7e0cc-305f-4a17-80cf-f36b8290a3d4"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Shift Up"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""2df24e91-0745-4b2e-b6ca-782a4853bc09"",
                     ""path"": ""<Keyboard>/q"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Shift Down"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""05c042e7-43bc-498c-982d-edfad2282d93"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Shift Down"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3d53e2f9-4b93-4aa3-95c7-c32e7e8ff8d8"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -271,6 +379,7 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
         m_Driving_Clutch = m_Driving.FindAction("Clutch", throwIfNotFound: true);
         m_Driving_ShiftUp = m_Driving.FindAction("Shift Up", throwIfNotFound: true);
         m_Driving_ShiftDown = m_Driving.FindAction("Shift Down", throwIfNotFound: true);
+        m_Driving_Pause = m_Driving.FindAction("Pause", throwIfNotFound: true);
     }
 
     ~@VehicleInputActions()
@@ -357,6 +466,7 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Driving_Clutch;
     private readonly InputAction m_Driving_ShiftUp;
     private readonly InputAction m_Driving_ShiftDown;
+    private readonly InputAction m_Driving_Pause;
     /// <summary>
     /// Provides access to input actions defined in input action map "Driving".
     /// </summary>
@@ -392,6 +502,10 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Driving/ShiftDown".
         /// </summary>
         public InputAction @ShiftDown => m_Wrapper.m_Driving_ShiftDown;
+        /// <summary>
+        /// Provides access to the underlying input action "Driving/Pause".
+        /// </summary>
+        public InputAction @Pause => m_Wrapper.m_Driving_Pause;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -436,6 +550,9 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
             @ShiftDown.started += instance.OnShiftDown;
             @ShiftDown.performed += instance.OnShiftDown;
             @ShiftDown.canceled += instance.OnShiftDown;
+            @Pause.started += instance.OnPause;
+            @Pause.performed += instance.OnPause;
+            @Pause.canceled += instance.OnPause;
         }
 
         /// <summary>
@@ -465,6 +582,9 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
             @ShiftDown.started -= instance.OnShiftDown;
             @ShiftDown.performed -= instance.OnShiftDown;
             @ShiftDown.canceled -= instance.OnShiftDown;
+            @Pause.started -= instance.OnPause;
+            @Pause.performed -= instance.OnPause;
+            @Pause.canceled -= instance.OnPause;
         }
 
         /// <summary>
@@ -547,5 +667,12 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnShiftDown(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Pause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPause(InputAction.CallbackContext context);
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class VehicleInputReader : MonoBehaviour
 {
+
     public float Throttle { get; private set; }
     public float Steering { get; private set; }
     public float Brake { get; private set; }
@@ -19,6 +20,10 @@ public class VehicleInputReader : MonoBehaviour
     void Awake()
     {
         input = new VehicleInputActions();
+
+        var json = PlayerPrefs.GetString("rebinds", "");
+        if (!string.IsNullOrEmpty(json))
+            input.asset.LoadBindingOverridesFromJson(json);
 
         // Throttle
         input.Driving.Throttle.performed += ctx => Throttle = ctx.ReadValue<float>();
@@ -57,4 +62,10 @@ public class VehicleInputReader : MonoBehaviour
         ShiftUp = false;
         ShiftDown = false;
     }
+
+    public VehicleInputActions GetActions()
+    {
+        return input;
+    }
+
 }
