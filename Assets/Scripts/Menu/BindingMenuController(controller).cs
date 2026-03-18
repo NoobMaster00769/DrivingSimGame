@@ -60,10 +60,33 @@ public class BindingListMenuController_controller : MonoBehaviour
         }
     }
 
+    void OnEnable()
+    {
+        index = 0;
+        timer = 0;
+        FindObjectOfType<NavigationFooterUI>()
+    .SetMenuType(NavigationFooterUI.MenuType.Vertical);
+    }
+
     // --------------------------------------------------
 
     void HandleNavigation()
-    {
+    {        // 🔥 ESC handling FIRST (state-based)
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (rebinding)
+            {
+                // cancel rebind ONLY
+                rebinding = false;
+                return;
+            }
+            else
+            {
+                // go back menu
+                FindObjectOfType<MenuManager>().OpenMenu(3);
+                return;
+            }
+        }
         if (timer < cooldown) return;
 
         float vertical = 0f;
@@ -105,7 +128,6 @@ public class BindingListMenuController_controller : MonoBehaviour
         if (cancel && rebinding)
             rebinding = false;
 
-        timer = 0;
     }
 
     // --------------------------------------------------

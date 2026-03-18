@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class MenuCameraRig : MonoBehaviour
 {
@@ -53,4 +53,15 @@ public class MenuCameraRig : MonoBehaviour
     {
         transitioning = true;
     }
+
+    public void SwitchToMenuInstant()
+    {
+        transitioning = false;
+
+        menuCamera.enabled = true;
+        gameplayCamera.enabled = false;
+
+        celestialMenu.SetActive(true);
+    }
+
 }

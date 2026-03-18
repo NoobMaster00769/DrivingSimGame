@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class BindingListMenuController : MonoBehaviour
@@ -37,26 +37,68 @@ public class BindingListMenuController : MonoBehaviour
 
     void HandleNavigation()
     {
+        // 🔥 ESC handling FIRST
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (rebinding)
+            {
+                rebinding = false;
+                return;
+            }
+            else
+            {
+                FindObjectOfType<MenuManager>().OpenMenu(3);
+                return;
+            }
+        }
+
+        // ✅ IMPORTANT — ADD THIS BACK
         if (timer < cooldown) return;
 
-        // W = up
-        if (input.Throttle > 0.6f)
-            ChangeIndex(-1);
+        float vertical = 0f;
+        bool select = false;
 
-        // S = down
-        if (input.Throttle < -0.6f)
-            ChangeIndex(1);
-
-        // SPACE = select
-        if (input.Brake > 0.5f)
-            Activate();
-
-        // ESC cancel rebind
-        if (Keyboard.current.escapeKey.wasPressedThisFrame && rebinding)
+        // 🎮 Controller
+        if (Gamepad.current != null)
         {
-            rebinding = false;
+            vertical += Gamepad.current.leftStick.y.ReadValue();
+
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+                select = true;
+        }
+
+        // ⌨️ Keyboard
+        vertical += input.Throttle;
+
+        if (input.Brake > 0.5f)
+            select = true;
+
+        // ✅ Movement WITH cooldown reset
+        if (vertical > 0.5f)
+        {
+            ChangeIndex(-1);
+            timer = 0;
+        }
+        else if (vertical < -0.5f)
+        {
+            ChangeIndex(1);
+            timer = 0;
+        }
+
+        if (select)
+        {
+            Activate();
+            timer = 0;
         }
     }
+    void OnEnable()
+    {
+        index = 0;
+        timer = 0;
+        FindObjectOfType<NavigationFooterUI>()
+    .SetMenuType(NavigationFooterUI.MenuType.Vertical);
+    }
+
     void ChangeIndex(int dir)
     {
         index += dir;

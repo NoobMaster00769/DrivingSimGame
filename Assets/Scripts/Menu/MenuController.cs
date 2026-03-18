@@ -1,5 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.InputSystem;
 public class CelestialMenuController : MonoBehaviour
 {
     public Transform[] options;
@@ -44,15 +45,51 @@ public class CelestialMenuController : MonoBehaviour
         MoveGuidingStar();
         AnimateSelection();
     }
+    void ResetSelection()
+    {
+        index = 0;
 
+        for (int i = 0; i < halos.Length; i++)
+            halos[i].Highlight(false);
+
+        if (halos.Length > 0)
+            halos[0].Highlight(true);
+
+        timer = 0;
+    }
     void HandleNavigation()
     {
         if (timer < inputCooldown) return;
 
-        if (input.Steering > 0.6f) ChangeIndex(1);
-        if (input.Steering < -0.6f) ChangeIndex(-1);
+        float horizontal = 0f;
+        bool select = false;
 
-        if (input.Brake > 0.5f) ActivateOption();
+        // 🎮 Controller
+        if (Gamepad.current != null)
+        {
+            horizontal += Gamepad.current.leftStick.x.ReadValue();
+
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+                select = true;
+        }
+
+        // ⌨️ Keyboard
+        horizontal += input.Steering;
+
+        if (input.Brake > 0.5f)
+            select = true;
+
+        if (horizontal > 0.6f) ChangeIndex(1);
+        if (horizontal < -0.6f) ChangeIndex(-1);
+
+        if (select) ActivateOption();
+    }
+
+    void OnEnable()
+    {
+        ResetSelection();
+        FindObjectOfType<NavigationFooterUI>()
+    .SetMenuType(NavigationFooterUI.MenuType.Horizontal);
     }
 
     void ChangeIndex(int direction)
@@ -108,7 +145,7 @@ public class CelestialMenuController : MonoBehaviour
             StartGame();
 
         if (index == 1)
-            Debug.Log("Tutorial");
+            FindObjectOfType<MenuManager>().OpenMenu(6);
 
         if (index == 2)
             Application.Quit();

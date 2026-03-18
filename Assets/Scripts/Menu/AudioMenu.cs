@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class AudioMenuController : MonoBehaviour
 {
@@ -48,19 +49,47 @@ public class AudioMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        // A / D navigation
-        if (input.Steering > 0.6f) ChangeIndex(1);
-        if (input.Steering < -0.6f) ChangeIndex(-1);
+        // 🔥 UNIVERSAL BACK
+        if (Keyboard.current.escapeKey.wasPressedThisFrame ||
+            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
+        {
+            TriggerBack();
+            return;
+        }
 
-        // W / S volume control (Throttle axis)
+        float horizontal = 0f;
+        bool select = false;
+
+        if (Gamepad.current != null)
+        {
+            horizontal += Gamepad.current.leftStick.x.ReadValue();
+
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+                select = true;
+        }
+
+        horizontal += input.Steering;
+
+        if (input.Brake > 0.5f)
+            select = true;
+
+        // navigation
+        if (horizontal > 0.6f) ChangeIndex(1);
+        if (horizontal < -0.6f) ChangeIndex(-1);
+
+        // sliders stay SAME (W/S)
         if (input.Throttle > 0.6f) IncreaseValue();
         if (input.Throttle < -0.6f) DecreaseValue();
 
-        // SPACE = select
-        if (input.Brake > 0.5f) ActivateOption();
+        if (select) ActivateOption();
     }
 
+    void TriggerBack()
+    {
 
+        index = 1;
+        ActivateOption();
+    }
     void ChangeIndex(int direction)
     {
         halos[index].Highlight(false);
@@ -145,7 +174,24 @@ public class AudioMenuController : MonoBehaviour
 
         timer = 0;
     }
+    void OnEnable()
+    {
+        ResetSelection();
+        FindObjectOfType<NavigationFooterUI>()
+    .SetMenuType(NavigationFooterUI.MenuType.Slider);
+    }
+    void ResetSelection()
+    {
+        index = 0;
 
+        for (int i = 0; i < halos.Length; i++)
+            halos[i].Highlight(false);
+
+        if (halos.Length > 0)
+            halos[0].Highlight(true);
+
+        timer = 0;
+    }
     void UpdateSliders()
     {
         masterSlider.SetValue(audioController.masterVolume);

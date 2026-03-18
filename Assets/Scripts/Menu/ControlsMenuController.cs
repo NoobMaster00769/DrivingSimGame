@@ -1,4 +1,5 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class ControlsMenuController : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class ControlsMenuController : MonoBehaviour
 
     void Update()
     {
+
         if (!enabled) return;
 
         var manager = FindObjectOfType<MenuManager>();
@@ -42,10 +44,41 @@ public class ControlsMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        if (input.Steering > 0.6f) ChangeIndex(1);
-        if (input.Steering < -0.6f) ChangeIndex(-1);
+        // 🔥 UNIVERSAL BACK
+        if (Keyboard.current.escapeKey.wasPressedThisFrame ||
+            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
+        {
+            TriggerBack();
+            return;
+        }
 
-        if (input.Brake > 0.5f) ActivateOption();
+        float horizontal = 0f;
+        bool select = false;
+
+        if (Gamepad.current != null)
+        {
+            horizontal += Gamepad.current.leftStick.x.ReadValue();
+
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+                select = true;
+        }
+
+        horizontal += input.Steering;
+
+        if (input.Brake > 0.5f)
+            select = true;
+
+        if (horizontal > 0.6f) ChangeIndex(1);
+        if (horizontal < -0.6f) ChangeIndex(-1);
+
+        if (select) ActivateOption();
+    }
+
+    void TriggerBack()
+    {
+
+        index = 1;
+        ActivateOption();
     }
 
     void ChangeIndex(int direction)
@@ -64,7 +97,24 @@ public class ControlsMenuController : MonoBehaviour
 
         timer = 0;
     }
+    void OnEnable()
+    {
+        ResetSelection();
+        FindObjectOfType<NavigationFooterUI>()
+    .SetMenuType(NavigationFooterUI.MenuType.Horizontal);
+    }
+    void ResetSelection()
+    {
+        index = 0;
 
+        for (int i = 0; i < halos.Length; i++)
+            halos[i].Highlight(false);
+
+        if (halos.Length > 0)
+            halos[0].Highlight(true);
+
+        timer = 0;
+    }
     void MoveGuidingStar()
     {
         Transform target = options[index];
