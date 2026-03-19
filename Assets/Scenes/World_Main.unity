@@ -3960,6 +3960,7 @@ MonoBehaviour:
   roadState: {fileID: 155815526}
   director: {fileID: 1064358333}
   player: {fileID: 48541895}
+  input: {fileID: 1748035234}
   starRoadDepthPrefab: {fileID: 2459259389070916698, guid: 460f6902cb2546a46987ac25a7ce914d, type: 3}
   starDepthOffsetY: 0.35
   yawStrength: 19
@@ -3984,6 +3985,10 @@ MonoBehaviour:
   boundaryThickness: 0.7
   boundaryOutwardPadding: 0.2
   colliderWidthPadding: 0.4
+  enableBranching: 1
+  branchChance: 0.12
+  branchStrength: 0.6
+  branchDuration: 6
 --- !u!4 &702803717
 Transform:
   m_ObjectHideFlags: 0

@@ -8,6 +8,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     public RoadState roadState;
     public WorldEventDirector director;
     public Transform player;
+    public VehicleInputReader input;
 
     [Header("Star Road Depth FX")]
     public GameObject starRoadDepthPrefab;
@@ -68,6 +69,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     float smoothCurvature;
     float turnMomentum;
     float accumulatedYaw;
+    Vector3 lastLeftEnd;
+    Vector3 lastRightEnd;
+    bool hasLastEnds = false;
 
     List<GameObject> roadChunks = new();
     List<Vector3> roadCenters = new();
@@ -85,6 +89,12 @@ public class LevelLayoutGenerator : MonoBehaviour
     void Update()
     {
         if (!player) return;
+
+        if (input.ResetCar)
+        {
+            RecoverCar();
+            input.ConsumeReset();
+        }
 
         float distanceToEnd =
             Vector3.Distance(player.position, currentPosition);
@@ -164,6 +174,11 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         smoothCurvature += microNoise;
 
+        float macroWave =
+    Mathf.Sin(Time.time * 0.2f) * 0.2f;
+
+        smoothCurvature += macroWave;
+
         float targetTurn = smoothCurvature * yawStrength;
 
         // spring-like turn momentum (no energy loss)
@@ -224,15 +239,27 @@ public class LevelLayoutGenerator : MonoBehaviour
         if (!starRoadPrefab) return;
 
         GameObject fx = Instantiate(starRoadPrefab);
+
+        fx.transform.parent = chunk.transform;
+
+        fx.transform.localPosition =
+            new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
+
+        // ✅ APPLY FLOAT AFTER POSITION IS SET
+        float floatOffset =
+            Mathf.Sin(Time.time * 1.5f +
+            chunk.transform.position.z * 0.1f) * 0.05f;
+
+        fx.transform.localPosition += Vector3.up * floatOffset;
+
+        // ✅ STABLE MATERIAL INSTANCE
         var r = fx.GetComponent<Renderer>();
         if (r != null)
         {
+            r.material = new Material(r.material); // prevents shared override bugs
             r.material.renderQueue = 2000;
+            r.material.SetInt("_ZWrite", 0);
         }
-
-        fx.transform.parent = chunk.transform;
-        fx.transform.localPosition =
-            new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
         fx.transform.rotation =
             Quaternion.LookRotation(currentForward, Vector3.up);
 
@@ -280,7 +307,6 @@ public class LevelLayoutGenerator : MonoBehaviour
     // BOUNDARY FX ENHANCED
     // =========================
     void CreateBoundarySegment(Vector3 start, Vector3 end, float widthScale, Transform parent)
-
     {
         Vector3 dir = (end - start).normalized;
         float length = Vector3.Distance(start, end);
@@ -290,7 +316,7 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         CreateOneSide(mid, dir, length, -1f, halfRoadWidth, parent);
         CreateOneSide(mid, dir, length, 1f, halfRoadWidth, parent);
-
+        hasLastEnds = true;
     }
 
     void CreateOneSide(Vector3 mid, Vector3 forward,
@@ -299,15 +325,68 @@ public class LevelLayoutGenerator : MonoBehaviour
                     Transform parent)
 
     {
+      //  forward = Vector3.Lerp(forward, currentForward, 0.15f);
+
         Vector3 right =
             Vector3.Cross(Vector3.up, forward).normalized;
 
-        Vector3 pos =
+        Vector3 basePos =
             mid +
             right * sideSign *
-            (halfWidth + boundaryOutwardPadding) +
-            Vector3.up *
-            (boundaryHeight * 0.5f + boundaryOffsetY);
+            (halfWidth + boundaryOutwardPadding);
+
+        Vector3 pos;
+
+        if (hasLastEnds)
+        {
+            Vector3 prevEnd = (sideSign < 0f) ? lastLeftEnd : lastRightEnd;
+
+            // snap start toward previous end → eliminates gap
+            Vector3 toPrev = prevEnd - basePos;
+            float alignment = Vector3.Dot(forward, toPrev.normalized);
+
+            // 🚫 if previous end is not in front → DON'T BLEND
+            if (alignment > 0.2f)
+            {
+                float blend = Mathf.Lerp(0.2f, 0.6f, 1f - alignment);
+                pos = Vector3.Lerp(basePos, prevEnd, blend);
+            }
+            else
+            {
+                pos = basePos;
+            }
+        }
+        else
+        {
+            pos = basePos;
+        }
+        // 🔒 prevent forward overshoot beyond midpoint
+        float maxForward = length * 0.45f;
+
+        Vector3 center = mid;
+        Vector3 offset = pos - center;
+
+        float forwardAmount = Vector3.Dot(offset, forward);
+
+        if (forwardAmount > maxForward)
+        {
+            pos -= forward * (forwardAmount - maxForward);
+        }
+        // store current end for next segment
+        float safeLength = length * 0.48f; // tiny shrink
+
+        Vector3 currentEnd =
+            basePos + forward * safeLength;
+
+        if (sideSign < 0f)
+            lastLeftEnd = currentEnd;
+        else
+            lastRightEnd = currentEnd;
+
+
+
+        // final height
+        pos += Vector3.up * (boundaryHeight * 0.5f + boundaryOffsetY);
 
         Quaternion rot =
             Quaternion.LookRotation(forward, Vector3.up);
@@ -319,9 +398,9 @@ public class LevelLayoutGenerator : MonoBehaviour
         
         BoxCollider col = wall.AddComponent<BoxCollider>();
         col.size = new Vector3(
-            boundaryThickness,
-            boundaryHeight,
-            length + chunkOverlap);
+     boundaryThickness,
+     boundaryHeight,
+     length * 0.9f);
 
         if (boundaryParticlePrefab)
         {
@@ -442,6 +521,20 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         colorOverLifetime.color =
             new ParticleSystem.MinMaxGradient(grad);
+        var lights = ps.lights;
+        lights.enabled = true;
+        lights.intensityMultiplier = 0.6f * fxBrightnessMultiplier;
+        lights.rangeMultiplier = 0.4f;
+        var sizeOverLifetime = ps.sizeOverLifetime;
+        sizeOverLifetime.enabled = true;
+
+        AnimationCurve curve = new AnimationCurve();
+        curve.AddKey(0f, 0.4f);
+        curve.AddKey(0.5f, 1f);
+        curve.AddKey(1f, 0.2f);
+
+        sizeOverLifetime.size =
+            new ParticleSystem.MinMaxCurve(1f, curve);
     }
 
     void SpawnWaterGrid(Vector3 basePosition)
@@ -469,6 +562,52 @@ public class LevelLayoutGenerator : MonoBehaviour
         }
     }
 
+    void RecoverCar()
+    {
+        if (roadCenters.Count == 0) return;
+
+        // 🔍 find closest road point
+        Vector3 closest = roadCenters[0];
+        float minDist = float.MaxValue;
+
+        foreach (var c in roadCenters)
+        {
+            float d = Vector3.Distance(player.position, c);
+            if (d < minDist)
+            {
+                minDist = d;
+                closest = c;
+            }
+        }
+
+        // 🧭 find forward direction from nearby segments
+        Vector3 forward = currentForward;
+
+        int index = roadCenters.IndexOf(closest);
+
+        if (index < roadCenters.Count - 1)
+        {
+            forward = (roadCenters[index + 1] - closest).normalized;
+        }
+        else if (index > 0)
+        {
+            forward = (closest - roadCenters[index - 1]).normalized;
+        }
+
+        Vector3 newPos = closest + Vector3.up * 2f;
+
+        player.position = newPos;
+        player.rotation = Quaternion.LookRotation(forward, Vector3.up);
+
+        // 🧼 reset physics
+        Rigidbody rb = player.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
+
     void SpawnWaterSlab(Vector3 position, Quaternion rotation)
     {
         GameObject water =
@@ -477,10 +616,18 @@ public class LevelLayoutGenerator : MonoBehaviour
         water.transform.localScale =
             new Vector3(waterWidth, 1f, chunkLength);
 
-        // HARD push water down slightly more
+        // 🔥 push slightly down (you already had this, keep it)
         water.transform.position += Vector3.down * 0.6f;
-    }
 
+        // 🔥 FIX: force render behind everything
+        var r = water.GetComponent<Renderer>();
+        if (r != null)
+        {
+            r.material = new Material(r.material); // avoid shared issues
+            r.material.renderQueue = 1990; // BELOW your road (2000)
+            r.material.SetInt("_ZWrite", 1); // VERY IMPORTANT
+        }
+    }
     void UpdateBranching()
     {
         if (!enableBranching || roadState == null) return;

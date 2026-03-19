@@ -27,8 +27,8 @@ public class WorldAudioController : MonoBehaviour
     public AudioClip[] arcMusic;
 
     [Header("Global Mix")]
-    [Range(0f, 1f)] public float masterVolume = 0.85f;
-    [Range(0f, 1f)] public float bgmVolume = 1f;
+    [Range(0f, 2f)] public float masterVolume = 1.2f;
+    [Range(0f, 2f)] public float bgmVolume = 1.2f;
 
     int currentArc = -1;
     bool usingA = true;
@@ -92,8 +92,10 @@ public class WorldAudioController : MonoBehaviour
             t += Time.deltaTime;
             float k = t / 5f;
 
-            a.volume = Mathf.Lerp(targetVolume, 0f, k) * masterVolume * bgmVolume;
-            b.volume = Mathf.Lerp(0f, targetVolume, k) * masterVolume * bgmVolume;
+            float mix = masterVolume * bgmVolume * 1.3f; // BOOST
+
+            a.volume = Mathf.Lerp(targetVolume, 0f, k) * mix;
+            b.volume = Mathf.Lerp(0f, targetVolume, k) * mix;
 
             yield return null;
         }
@@ -106,16 +108,16 @@ public class WorldAudioController : MonoBehaviour
     {
         switch (arc)
         {
-            case 0: return 0.24f; // Calm
-            case 1: return 0.28f; // Pulse
-            case 2: return 0.28f; // Ribbon
-            case 3: return 0.32f; // Chaotic
-            case 4: return 0.20f; // Dream
-            case 5: return 0.30f; // Surge
-            case 6: return 0.25f; // Drift
+            case 0: return 0.55f; // Calm
+            case 1: return 0.65f; // Pulse
+            case 2: return 0.65f; // Ribbon
+            case 3: return 0.75f; // Chaotic
+            case 4: return 0.50f; // Dream
+            case 5: return 0.70f; // Surge
+            case 6: return 0.60f; // Drift
         }
 
-        return 0.26f;
+        return 0.6f;
     }
 
     // --------------------------------------------------
@@ -141,19 +143,23 @@ public class WorldAudioController : MonoBehaviour
         );
 
         engine.volume =
-            Mathf.Lerp(0.22f, 0.55f, normalized) *
+            Mathf.Lerp(0.4f, 1.1f, normalized) *
             masterVolume;
 
         wind.volume =
-            Mathf.Lerp(0f, 0.20f, normalized) *
+            Mathf.Lerp(0.05f, 0.45f, normalized) *
             masterVolume;
+        if (acceleration > 5f)
+        {
+            engine.pitch += 0.08f;
+        }
     }
 
-    // --------------------------------------------------
-    // ARC ATMOSPHERE
-    // --------------------------------------------------
+        // --------------------------------------------------
+        // ARC ATMOSPHERE
+        // --------------------------------------------------
 
-    void UpdateArcAtmosphere()
+        void UpdateArcAtmosphere()
     {
         int arc = director.CurrentArcIndex;
 
@@ -207,15 +213,15 @@ public class WorldAudioController : MonoBehaviour
         }
 
         pianoLayer.volume =
-            Mathf.Lerp(pianoLayer.volume, pianoTarget * masterVolume, Time.deltaTime * 1.5f);
+            Mathf.Lerp(pianoLayer.volume, pianoTarget * masterVolume * 1.6f, Time.deltaTime * 1.5f);
 
         cosmicAmbience.volume =
-            Mathf.Lerp(cosmicAmbience.volume, cosmicTarget * masterVolume, Time.deltaTime * 1.5f);
+            Mathf.Lerp(cosmicAmbience.volume, cosmicTarget * masterVolume * 1.8f, Time.deltaTime * 1.5f);
 
         if (oceanAmbience)
         {
             oceanAmbience.volume =
-                Mathf.Lerp(oceanAmbience.volume, oceanTarget * masterVolume, Time.deltaTime * 1.5f);
+                Mathf.Lerp(oceanAmbience.volume, oceanTarget * masterVolume * 1.8f, Time.deltaTime * 1.5f);
         }
     }
 
@@ -261,5 +267,11 @@ public class WorldAudioController : MonoBehaviour
 
         filterB.cutoffFrequency =
             Mathf.Lerp(filterB.cutoffFrequency, cutoff, Time.deltaTime * 1.2f);
+
+        float intensityBoost = 1f + road.tempest * 0.4f;
+
+        musicA.volume *= intensityBoost;
+        musicB.volume *= intensityBoost;
+
     }
 }

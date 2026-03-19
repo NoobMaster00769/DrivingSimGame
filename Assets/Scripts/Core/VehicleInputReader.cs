@@ -14,6 +14,7 @@ public class VehicleInputReader : MonoBehaviour
     // One-frame shift flags
     public bool ShiftUp { get; private set; }
     public bool ShiftDown { get; private set; }
+    public bool ResetCar { get; private set; }
 
     private VehicleInputActions input;
 
@@ -44,6 +45,9 @@ public class VehicleInputReader : MonoBehaviour
         // Gear shifts
         input.Driving.ShiftUp.performed += _ => ShiftUp = true;
         input.Driving.ShiftDown.performed += _ => ShiftDown = true;
+
+        // Reset Car
+        input.Driving.ResetCar.performed += _ => ResetCar = true;
     }
 
     void OnEnable()
@@ -61,6 +65,11 @@ public class VehicleInputReader : MonoBehaviour
     {
         ShiftUp = false;
         ShiftDown = false;
+    }
+
+    public void ConsumeReset()
+    {
+        ResetCar = false;
     }
 
     public VehicleInputActions GetActions()

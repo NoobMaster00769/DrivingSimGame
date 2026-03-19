@@ -99,6 +99,12 @@ public class CarFollowCamera : MonoBehaviour
 
         desiredPosition += target.up * suspension;
 
+        float shake =
+    Mathf.PerlinNoise(Time.time * 6f, 0f) *
+    Mathf.Clamp01(speed * 0.02f) * 0.2f;
+
+        desiredPosition += target.up * shake;
+
         // cosmic floating drift
         float drift = Mathf.Sin(driftTimer) * driftAmount;
         desiredPosition += target.right * drift;
@@ -149,6 +155,11 @@ public class CarFollowCamera : MonoBehaviour
         float bank =
             Mathf.Clamp(-sideways * bankAmount, -bankAmount, bankAmount);
 
+        float turnImpact =
+    Mathf.Abs(sideways) * 1.5f;
+
+        desiredPosition += target.right * turnImpact;
+
         Quaternion bankRot =
             Quaternion.AngleAxis(bank, Vector3.forward);
 
@@ -159,7 +170,7 @@ public class CarFollowCamera : MonoBehaviour
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             baseRotation * bankRot,
-            Time.deltaTime * rotationSmooth
+            Time.deltaTime * (rotationSmooth * 0.9f)
         );
     }
 }
