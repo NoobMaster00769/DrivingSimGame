@@ -239,6 +239,15 @@ public class CosmicUIController : MonoBehaviour
         float rpmNorm =
             Mathf.Clamp01(vehicle.engineRPM / vehicle.maxRPM);
 
+        bool suggestUpshift =
+    rpmNorm > 0.85f &&
+    vehicle.currentGear > 0 &&
+    vehicle.currentGear < vehicle.forwardGearRatios.Length;
+
+        bool suggestDownshift =
+            rpmNorm < 0.25f &&
+            vehicle.currentGear > 1;
+
         int litCount =
             Mathf.RoundToInt(speedNorm * arcStarCount);
 
@@ -267,7 +276,21 @@ public class CosmicUIController : MonoBehaviour
                 Mathf.Sin(Time.time * rpmShimmerSpeed + i * 0.3f)
                 * rpmNorm * rpmShimmerIntensity;
 
-            float targetAlpha = (baseAlpha + shimmer) * revealFactor;
+            float shiftPulse = 0f;
+
+            if (suggestUpshift && lit)
+            {
+                shiftPulse = Mathf.Sin(Time.time * 8f) * 0.3f;
+            }
+
+            if (suggestDownshift && lit)
+            {
+                shiftPulse = Mathf.Sin(Time.time * 6f) * 0.2f;
+            }
+
+            float targetAlpha =
+                (baseAlpha + shimmer + shiftPulse) * revealFactor;
+
 
             // Redline pulse (purely brightness + slight thickness)
             if (inRedline && lit)

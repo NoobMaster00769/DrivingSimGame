@@ -52,12 +52,22 @@ public class DrivingState : VehicleState
     {
         if (context.clutch < 0.85f) return;
 
+        float speed = context.rb.velocity.magnitude;
+
+        // SHIFT UP (soft gating)
         if (context.input.ShiftUp &&
             context.currentGear < context.forwardGearRatios.Length)
         {
-            context.currentGear++;
+            float minSpeed =
+                context.currentGear * context.minSpeedForGearFactor;
+
+            if (speed > minSpeed * 0.6f) // soft allowance
+            {
+                context.currentGear++;
+            }
         }
 
+        // SHIFT DOWN
         if (context.input.ShiftDown &&
             context.currentGear > 0)
         {
@@ -106,15 +116,27 @@ public class DrivingState : VehicleState
 
     void ApplyDrive()
     {
+        // Neutral
         if (context.currentGear == 0)
         {
             SetDriveTorque(0f);
             return;
         }
 
+        // ---------------- REVERSE (independent) ----------------
+        if (context.currentGear < 0)
+        {
+            float reverseTorque =
+                context.maxMotorTorque * 0.6f * context.input.Throttle;
+
+            SetDriveTorque(reverseTorque);
+            return;
+        }
+
+        float speed = context.rb.velocity.magnitude;
         float rpmNorm = context.engineRPM / context.maxRPM;
 
-        // Natural resistance near redline
+        // ---------------- REDLINE RESISTANCE ----------------
         float redlineResistance = 1f;
 
         if (rpmNorm > 0.92f)
@@ -123,10 +145,28 @@ public class DrivingState : VehicleState
             redlineResistance = Mathf.Lerp(1f, 0f, over);
         }
 
+        // ---------------- LUGGING (KEY FIX) ----------------
+        float minSpeedForGear =
+            context.currentGear * context.minSpeedForGearFactor;
+
+        float efficiency = 1f;
+
+        if (speed < minSpeedForGear)
+        {
+            float t = speed / Mathf.Max(0.1f, minSpeedForGear);
+
+            // NON-LINEAR DROP (this is the key)
+            t = t * t * t; // cubic falloff
+
+            efficiency = Mathf.Lerp(0.02f, 1f, t);
+        }
+
+        // ---------------- ENGINE TORQUE ----------------
         float engineTorque =
             context.maxMotorTorque *
             context.input.Throttle *
-            redlineResistance;
+            redlineResistance *
+            efficiency;
 
         float driveTorque =
             engineTorque *
@@ -134,6 +174,12 @@ public class DrivingState : VehicleState
             context.finalDriveRatio;
 
         SetDriveTorque(driveTorque);
+
+        // ---------------- ENGINE STRUGGLE FEEL ----------------
+        if (efficiency < 0.25f && context.input.Throttle > 0.5f)
+        {
+            context.engineRPM -= 2000f * Time.fixedDeltaTime;
+        }
     }
 
     // ==============================

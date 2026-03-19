@@ -72,6 +72,11 @@ public class VehicleContext : MonoBehaviour
     [HideInInspector] public float engineRPM;
     [HideInInspector] public bool engineStalled;
 
+    [Header("Gear Behavior")]
+    public float minSpeedForGearFactor = 4f;   // tuning knob
+    public float luggingPenalty = 0.15f;       // how dead high gear feels at low speed
+    public float overRevPenalty = 0.5f;        // penalty at too high RPM
+
     private void Start()
     {
         rb.centerOfMass = new Vector3(0f, -0.55f, 0f); // more stable
