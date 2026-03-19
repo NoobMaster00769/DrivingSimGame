@@ -51,6 +51,17 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Header("Collider Seam Fix")]
     public float colliderWidthPadding = 0.4f;
 
+    [Header("Path Variation")]
+    public bool enableBranching = true;
+
+    [Range(0f, 1f)] public float branchChance = 0.12f;
+    public float branchStrength = 0.6f;
+    public float branchDuration = 6f;
+
+    float branchTimer;
+    float branchDirection;
+    bool branchActive;
+
     Vector3 currentPosition;
     Vector3 currentForward;
 
@@ -90,7 +101,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         if (distanceToEnd < chunkLength * dynamicChunksAhead * 0.6f)
             SpawnNextChunk();
 
-
+        UpdateBranching();
         Cleanup();
     }
 
@@ -147,27 +158,61 @@ public class LevelLayoutGenerator : MonoBehaviour
         smoothCurvature =
             Mathf.Lerp(smoothCurvature, roadState.curvature, 0.45f);
 
+        float microNoise =
+    Mathf.Sin(Time.time * 0.8f +
+    roadCenters.Count * 0.3f) * 0.08f;
+
+        smoothCurvature += microNoise;
+
         float targetTurn = smoothCurvature * yawStrength;
 
         // spring-like turn momentum (no energy loss)
-        turnMomentum += (targetTurn - turnMomentum) * 0.5f;
+        turnMomentum += (targetTurn - turnMomentum) * 0.45f;
+
+        // tiny overshoot = natural motion
+        turnMomentum *= 1.02f;
 
         accumulatedYaw += turnMomentum;
+
+        float lateralShift =
+    Mathf.Sin(roadCenters.Count * 0.2f) * 0.5f;
+
+        currentPosition +=
+            Vector3.Cross(Vector3.up, currentForward) * lateralShift;
 
     }
 
     void ApplySectionReactivity(GameObject chunk)
     {
-        float width =
+        float baseWidth =
             Mathf.Lerp(1.2f, 0.85f, roadState.width);
 
-        chunk.transform.localScale =
-            new Vector3(width, 1f, 1f);
+        float widthPulse =
+            Mathf.Sin(Time.time * 0.3f +
+            chunk.transform.position.z * 0.05f) * 0.08f;
 
-        float bank =
+        float width = baseWidth + widthPulse;
+
+        float branchWidthBoost = branchActive ? 1.1f : 1f;
+
+        chunk.transform.localScale =
+            new Vector3(width * branchWidthBoost, 1f, 1f);
+        float baseBank =
             Mathf.Lerp(-5f, 5f, roadState.banking);
 
+        float bankLag =
+            Mathf.Sin(Time.time * 0.6f +
+            chunk.transform.position.z * 0.08f) * 1.2f;
+
+        float bank = baseBank + bankLag;
+
         chunk.transform.Rotate(Vector3.forward, bank, Space.Self);
+        float subtleNoise =
+    Mathf.Sin(Time.time * 0.5f +
+    chunk.transform.position.z * 0.05f) * 0.05f;
+
+        chunk.transform.Rotate(Vector3.up, subtleNoise * 10f, Space.Self);
+
     }
 
     // =========================
@@ -175,9 +220,16 @@ public class LevelLayoutGenerator : MonoBehaviour
     // =========================
     void SpawnStarRoadFX(GameObject chunk)
     {
+
         if (!starRoadPrefab) return;
 
         GameObject fx = Instantiate(starRoadPrefab);
+        var r = fx.GetComponent<Renderer>();
+        if (r != null)
+        {
+            r.material.renderQueue = 2000;
+        }
+
         fx.transform.parent = chunk.transform;
         fx.transform.localPosition =
             new Vector3(0f, starRoadOffsetY + 0.15f, 0f);
@@ -424,6 +476,37 @@ public class LevelLayoutGenerator : MonoBehaviour
 
         water.transform.localScale =
             new Vector3(waterWidth, 1f, chunkLength);
+
+        // HARD push water down slightly more
+        water.transform.position += Vector3.down * 0.6f;
+    }
+
+    void UpdateBranching()
+    {
+        if (!enableBranching || roadState == null) return;
+
+        branchTimer -= Time.deltaTime;
+
+        if (!branchActive && Random.value < branchChance * Time.deltaTime)
+        {
+            branchActive = true;
+            branchTimer = branchDuration;
+            branchDirection = Random.value > 0.5f ? 1f : -1f;
+        }
+
+        if (branchActive)
+        {
+            float t = 1f - (branchTimer / branchDuration);
+            float envelope = Mathf.Sin(t * Mathf.PI);
+
+            float influence = branchDirection * branchStrength * envelope;
+
+            roadState.curvature += influence * Time.deltaTime;
+            roadState.curvature = Mathf.Clamp(roadState.curvature, -1f, 1f);
+
+            if (branchTimer <= 0f)
+                branchActive = false;
+        }
     }
 
     void Cleanup()
