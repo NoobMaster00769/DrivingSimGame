@@ -103,7 +103,7 @@ public class StarHaloGenerator : MonoBehaviour
 
         if (pulse > 0)
         {
-            pulse -= Time.deltaTime * 4f;
+            pulse -= Time.unscaledDeltaTime * 4f;
 
             float scale = 1f + pulse * 0.25f;
 
@@ -115,7 +115,7 @@ public class StarHaloGenerator : MonoBehaviour
                 Vector3.Lerp(
                     transform.localScale,
                     Vector3.one,
-                    Time.deltaTime * 4f
+                    Time.unscaledDeltaTime * 4f
                 );
         }
 
@@ -124,9 +124,9 @@ public class StarHaloGenerator : MonoBehaviour
 
         transform.localScale =
             Vector3.one * (1 + wobble);
-        innerLayer.Rotate(Vector3.forward * innerSpeed * Time.deltaTime);
-        midLayer.Rotate(Vector3.forward * midSpeed * Time.deltaTime);
-        outerLayer.Rotate(Vector3.forward * outerSpeed * Time.deltaTime);
+        innerLayer.Rotate(Vector3.forward * innerSpeed * Time.unscaledDeltaTime);
+        midLayer.Rotate(Vector3.forward * midSpeed * Time.unscaledDeltaTime);
+        outerLayer.Rotate(Vector3.forward * outerSpeed * Time.unscaledDeltaTime);
 
         UpdateConstellation();
     }

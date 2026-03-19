@@ -10,7 +10,7 @@ public class TutorialMenu : MonoBehaviour
 
     void Update()
     {
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         if (timer > 0.4f)
             canExit = true;

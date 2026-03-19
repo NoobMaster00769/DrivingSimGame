@@ -26,7 +26,7 @@ public class BindingListMenuController : MonoBehaviour
         var manager = FindObjectOfType<MenuManager>();
         if (manager && manager.IsTransitioning()) return;
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         if (!rebinding)
             HandleNavigation();
@@ -68,9 +68,11 @@ public class BindingListMenuController : MonoBehaviour
         }
 
         // ⌨️ Keyboard
-        vertical += input.Throttle;
+        // Keyboard
+        if (Keyboard.current.wKey.isPressed) vertical += 1f;
+        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
         // ✅ Movement WITH cooldown reset
@@ -144,13 +146,14 @@ public class BindingListMenuController : MonoBehaviour
             options[index].position +
             Vector3.left * starOffsetX;
 
-        guidingStar.position =
-            Vector3.SmoothDamp(
-                guidingStar.position,
-                target,
-                ref velocity,
-                0.15f
-            );
+        guidingStar.position = Vector3.SmoothDamp(
+     guidingStar.position,
+     target,
+     ref velocity,
+     0.15f,
+     Mathf.Infinity,
+     Time.unscaledDeltaTime
+ );
     }
 
     void AnimateSelection()

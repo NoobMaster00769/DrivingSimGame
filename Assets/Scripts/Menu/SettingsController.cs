@@ -32,7 +32,7 @@ public class SettingsMenuController : MonoBehaviour
         if (manager != null && manager.IsTransitioning())
             return;
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         HandleNavigation();
         MoveGuidingStar();
@@ -61,9 +61,11 @@ public class SettingsMenuController : MonoBehaviour
                 select = true;
         }
 
-        horizontal += input.Steering;
+        // Keyboard
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
         if (horizontal > 0.6f) ChangeIndex(1);
@@ -73,9 +75,16 @@ public class SettingsMenuController : MonoBehaviour
     }
     void TriggerBack()
     {
-     
-        index = 1;
-        ActivateOption();
+        var state = GameStateController.Instance.currentState;
+
+        if (state == GameState.Paused)
+        {
+            FindObjectOfType<MenuManager>().OpenMenu(7); // back to pause
+        }
+        else
+        {
+            FindObjectOfType<MenuManager>().OpenMenu(0); // back to main menu
+        }
     }
     void ChangeIndex(int direction)
     {
@@ -103,11 +112,13 @@ public class SettingsMenuController : MonoBehaviour
         Vector3 targetPos = target.localPosition + Vector3.up * starHeight;
 
         guidingStar.localPosition = Vector3.SmoothDamp(
-            guidingStar.localPosition,
-            targetPos,
-            ref velocity,
-            0.18f
-        );
+      guidingStar.localPosition,
+      targetPos,
+      ref velocity,
+      0.18f,
+      Mathf.Infinity,
+      Time.unscaledDeltaTime
+  );
     }
 
     void AnimateSelection()
@@ -119,7 +130,7 @@ public class SettingsMenuController : MonoBehaviour
             options[i].localScale = Vector3.Lerp(
                 options[i].localScale,
                 Vector3.one * scale,
-                Time.deltaTime * 7f
+                Time.unscaledDeltaTime * 7f
             );
         }
     }
@@ -143,11 +154,23 @@ public class SettingsMenuController : MonoBehaviour
     }
     void ActivateOption()
     {
+        var state = GameStateController.Instance.currentState;
+
         if (index == 0)
             FindObjectOfType<MenuManager>().OpenMenu(3);
 
         if (index == 1)
-            FindObjectOfType<MenuManager>().OpenMenu(0);
+        {
+            if (state == GameState.Paused)
+            {
+                FindObjectOfType<MenuManager>().OpenMenu(7); // back to pause
+            }
+            else
+            {
+                FindObjectOfType<MenuManager>().OpenMenu(0); // back to main menu
+            }
+        }
+
 
         if (index == 2)
             FindObjectOfType<MenuManager>().OpenMenu(2);

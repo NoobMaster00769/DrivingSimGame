@@ -33,7 +33,7 @@ public class ControlsMenuController : MonoBehaviour
         if (manager != null && manager.IsTransitioning())
             return;
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         HandleNavigation();
         MoveGuidingStar();
@@ -63,9 +63,11 @@ public class ControlsMenuController : MonoBehaviour
                 select = true;
         }
 
-        horizontal += input.Steering;
+        // Keyboard
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
         if (horizontal > 0.6f) ChangeIndex(1);
@@ -122,11 +124,13 @@ public class ControlsMenuController : MonoBehaviour
         Vector3 targetPos = target.localPosition + Vector3.up * starHeight;
 
         guidingStar.localPosition = Vector3.SmoothDamp(
-            guidingStar.localPosition,
-            targetPos,
-            ref velocity,
-            0.18f
-        );
+     guidingStar.localPosition,
+     targetPos,
+     ref velocity,
+     0.18f,
+     Mathf.Infinity,
+     Time.unscaledDeltaTime
+ );
     }
 
     void AnimateSelection()
@@ -138,7 +142,7 @@ public class ControlsMenuController : MonoBehaviour
             options[i].localScale = Vector3.Lerp(
                 options[i].localScale,
                 Vector3.one * scale,
-                Time.deltaTime * 7f
+                Time.unscaledDeltaTime * 7f
             );
         }
     }

@@ -37,7 +37,7 @@ public class AudioMenuController : MonoBehaviour
         if (manager && manager.IsTransitioning())
             return;
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         HandleNavigation();
         MoveGuidingStar();
@@ -68,27 +68,44 @@ public class AudioMenuController : MonoBehaviour
                 select = true;
         }
 
-        horizontal += input.Steering;
+        // Keyboard
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
         // navigation
         if (horizontal > 0.6f) ChangeIndex(1);
         if (horizontal < -0.6f) ChangeIndex(-1);
 
-        // sliders stay SAME (W/S)
-        if (input.Throttle > 0.6f) IncreaseValue();
-        if (input.Throttle < -0.6f) DecreaseValue();
+        float vertical = 0f;
+
+        // Keyboard
+        if (Keyboard.current.wKey.isPressed) vertical += 1f;
+        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
+
+        // Controller
+        if (Gamepad.current != null)
+            vertical += Gamepad.current.leftStick.y.ReadValue();
+
+        if (vertical > 0.6f) IncreaseValue();
+        if (vertical < -0.6f) DecreaseValue();
 
         if (select) ActivateOption();
     }
 
     void TriggerBack()
     {
+        var state = GameStateController.Instance.currentState;
 
-        index = 1;
-        ActivateOption();
+        if (state == GameState.Paused)
+            FindObjectOfType<MenuManager>().OpenMenu(7);
+        else
+        {
+            index = 1;
+            ActivateOption();
+        }
     }
     void ChangeIndex(int direction)
     {
@@ -114,13 +131,14 @@ public class AudioMenuController : MonoBehaviour
         Vector3 targetPos =
             target.localPosition + Vector3.up * starHeight;
 
-        guidingStar.localPosition =
-            Vector3.SmoothDamp(
-                guidingStar.localPosition,
-                targetPos,
-                ref velocity,
-                0.18f
-            );
+        guidingStar.localPosition = Vector3.SmoothDamp(
+     guidingStar.localPosition,
+     targetPos,
+     ref velocity,
+     0.18f,
+     Mathf.Infinity,
+     Time.unscaledDeltaTime
+ );
     }
 
     void AnimateSelection()
@@ -133,7 +151,7 @@ public class AudioMenuController : MonoBehaviour
                 Vector3.Lerp(
                     options[i].localScale,
                     Vector3.one * scale,
-                    Time.deltaTime * 7f
+                    Time.unscaledDeltaTime * 7f
                 );
         }
     }

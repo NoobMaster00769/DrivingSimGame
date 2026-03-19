@@ -64,7 +64,7 @@ public class StarVolumeSlider : MonoBehaviour
                 Vector3.Lerp(
                     stars[i].localScale,
                     Vector3.one * targetScale,
-                    Time.deltaTime * 8f
+                    Time.unscaledDeltaTime * 8f
                 );
 
             Color c = starRenderers[i].material.color;
@@ -76,7 +76,7 @@ public class StarVolumeSlider : MonoBehaviour
                 Mathf.Lerp(
                     c.a,
                     targetAlpha,
-                    Time.deltaTime * 8f
+                    Time.unscaledDeltaTime * 8f
                 );
 
             starRenderers[i].material.color = c;

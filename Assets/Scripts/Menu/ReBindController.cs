@@ -264,7 +264,7 @@ public class ControllerRebindItem : MonoBehaviour
             Vector3.Lerp(
                 transform.localScale,
                 Vector3.one * scale,
-                Time.deltaTime * 10f
+                Time.unscaledDeltaTime * 10f
             );
     }
 }

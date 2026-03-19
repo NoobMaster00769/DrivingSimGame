@@ -1,67 +1,121 @@
 ﻿using UnityEngine;
+using System.Collections;
 
-public class MenuCameraRig : MonoBehaviour
+public class CameraDirector : MonoBehaviour
 {
-    public Camera menuCamera;
+    public Camera menuCamera;        // static menu cam
+    public Camera gameplayCamera;    // main camera (with CarFollowCamera)
 
-    public GameObject celestialMenu;
+    public float transitionTime = 0.6f;
 
-    public Camera gameplayCamera;
+    bool isTransitioning;
 
-    public Transform gameplayCameraTransform;
+    Vector3 menuStartPos;
+    Quaternion menuStartRot;
 
-    public float transitionSpeed = 2f;
-
-    bool transitioning = false;
-
-    void Start()
+    void Awake()
     {
-        gameplayCamera.enabled = false;
+        // Store menu camera original position
+        menuStartPos = menuCamera.transform.position;
+        menuStartRot = menuCamera.transform.rotation;
     }
 
-    void Update()
+    public void SwitchToGameplay()
     {
-        if (!transitioning)
-            return;
+        if (isTransitioning) return;
 
-        transform.position =
-            Vector3.Lerp(
-                transform.position,
-                gameplayCameraTransform.position,
-                Time.deltaTime * transitionSpeed
-            );
+        StopAllCoroutines();
+        StartCoroutine(MenuToGameplay());
+    }
 
-        transform.rotation =
-            Quaternion.Slerp(
-                transform.rotation,
-                gameplayCameraTransform.rotation,
-                Time.deltaTime * transitionSpeed
-            );
+    public void SwitchToMenu()
+    {
+        if (isTransitioning) return;
 
-        if (Vector3.Distance(transform.position, gameplayCameraTransform.position) < 0.1f)
+        StopAllCoroutines();
+        StartCoroutine(GameplayToMenu()); // 🔥 FIX: use correct coroutine
+    }
+
+    IEnumerator MenuToGameplay()
+    {
+        isTransitioning = true;
+
+        Transform menuT = menuCamera.transform;
+        Transform gameT = gameplayCamera.transform;
+
+        Vector3 startPos = menuT.position;
+        Quaternion startRot = menuT.rotation;
+
+        Vector3 targetPos = gameT.position;
+        Quaternion targetRot = gameT.rotation;
+
+        menuCamera.gameObject.SetActive(true);
+        gameplayCamera.gameObject.SetActive(false);
+
+        float t = 0;
+
+        while (t < 1f)
         {
-            gameplayCamera.enabled = true;
-            menuCamera.enabled = false;
+            t += Time.unscaledDeltaTime / transitionTime;
 
-            celestialMenu.SetActive(false);
+            menuT.position = Vector3.Lerp(startPos, targetPos, t);
+            menuT.rotation = Quaternion.Slerp(startRot, targetRot, t);
 
-            GameStateController.Instance.SetState(GameState.Driving);
+            yield return null;
         }
+
+        // snap
+        menuT.position = targetPos;
+        menuT.rotation = targetRot;
+
+        // switch
+        menuCamera.gameObject.SetActive(false);
+        gameplayCamera.gameObject.SetActive(true);
+
+        isTransitioning = false;
     }
 
-    public void StartTransition()
+    IEnumerator GameplayToMenu()
     {
-        transitioning = true;
+        isTransitioning = true;
+
+        Transform menuT = menuCamera.transform;
+        Transform gameT = gameplayCamera.transform;
+
+        // 🔥 start from gameplay camera position
+        menuT.position = gameT.position;
+        menuT.rotation = gameT.rotation;
+
+        Vector3 startPos = menuT.position;
+        Quaternion startRot = menuT.rotation;
+
+        Vector3 targetPos = new Vector3(
+            menuStartPos.x,
+            menuStartPos.y,
+            gameT.position.z   // 🔥 FOLLOW CAR FORWARD
+        );
+
+        Quaternion targetRot = menuStartRot;
+
+        menuCamera.gameObject.SetActive(true);
+        gameplayCamera.gameObject.SetActive(false);
+
+        float t = 0;
+
+        while (t < 1f)
+        {
+            t += Time.unscaledDeltaTime / transitionTime;
+
+            menuT.position = Vector3.Lerp(startPos, targetPos, t);
+            menuT.rotation = Quaternion.Slerp(startRot, targetRot, t);
+
+            yield return null;
+        }
+
+        // snap back to original menu position
+        menuT.position = targetPos;
+        menuT.rotation = targetRot;
+
+        isTransitioning = false;
     }
-
-    public void SwitchToMenuInstant()
-    {
-        transitioning = false;
-
-        menuCamera.enabled = true;
-        gameplayCamera.enabled = false;
-
-        celestialMenu.SetActive(true);
-    }
-
 }

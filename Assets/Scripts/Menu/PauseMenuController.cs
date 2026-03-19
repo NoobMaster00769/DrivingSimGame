@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEngine.InputSystem;
-public class CelestialMenuController : MonoBehaviour
+
+public class PauseMenuController : MonoBehaviour
 {
     public Transform[] options;
     public StarHaloGenerator[] halos;
@@ -16,28 +16,32 @@ public class CelestialMenuController : MonoBehaviour
 
     Vector3 velocity;
 
+    PauseSystem pauseSystem;
+    MenuManager menuManager;
+
     void Start()
     {
         index = Mathf.Clamp(index, 0, options.Length - 1);
 
-        StartCoroutine(InitializeHalo());
-    }
-
-    IEnumerator InitializeHalo()
-    {
-        yield return null; // wait 1 frame
-
         if (halos.Length > index)
             halos[index].Highlight(true);
+
+        // ✅ cache once (no spam FindObjectOfType)
+        pauseSystem = FindObjectOfType<PauseSystem>();
+        menuManager = FindObjectOfType<MenuManager>();
     }
+
     void Update()
     {
         if (!enabled) return;
 
-        var manager = FindObjectOfType<MenuManager>();
-        if (manager != null && manager.IsTransitioning())
+        // 🔥 STRICT STATE CONTROL
+        if (GameStateController.Instance.currentState != GameState.Paused)
             return;
-        if (GameStateController.Instance.currentState != GameState.StartMenu) return;
+
+        // 🔥 BLOCK DURING MENU TRANSITION
+        if (menuManager != null && menuManager.IsTransitioning())
+            return;
 
         timer += Time.unscaledDeltaTime;
 
@@ -45,26 +49,22 @@ public class CelestialMenuController : MonoBehaviour
         MoveGuidingStar();
         AnimateSelection();
     }
-    void ResetSelection()
-    {
-        index = 0;
 
-        for (int i = 0; i < halos.Length; i++)
-            halos[i].Highlight(false);
-
-        if (halos.Length > 0)
-            halos[0].Highlight(true);
-
-        timer = 0;
-    }
     void HandleNavigation()
     {
         if (timer < inputCooldown) return;
 
+        // 🔥 ESC = RESUME
+        if (Keyboard.current.escapeKey.wasPressedThisFrame ||
+            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
+        {
+            pauseSystem?.Resume();
+            return;
+        }
+
         float horizontal = 0f;
         bool select = false;
 
-        // 🎮 Controller
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -73,7 +73,6 @@ public class CelestialMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
         horizontal += input.Steering;
 
         if (input.Brake > 0.5f)
@@ -83,13 +82,6 @@ public class CelestialMenuController : MonoBehaviour
         if (horizontal < -0.6f) ChangeIndex(-1);
 
         if (select) ActivateOption();
-    }
-
-    void OnEnable()
-    {
-        ResetSelection();
-        FindObjectOfType<NavigationFooterUI>()
-    .SetMenuType(NavigationFooterUI.MenuType.Horizontal);
     }
 
     void ChangeIndex(int direction)
@@ -107,8 +99,17 @@ public class CelestialMenuController : MonoBehaviour
 
         var flash = guidingStar.GetComponent<GuidingStarFlash>();
         if (flash) flash.TriggerFlash();
+
         halos[index].Pulse();
+
         timer = 0;
+    }
+
+    void ActivateOption()
+    {
+        if (index == 0) pauseSystem?.Resume();                 // Resume
+        if (index == 1)  pauseSystem?.ExitToMainMenu();            // Settings
+        if (index == 2) menuManager?.OpenMenu(1);    // Exit
     }
 
     void MoveGuidingStar()
@@ -118,11 +119,13 @@ public class CelestialMenuController : MonoBehaviour
         Vector3 targetPos = target.localPosition + Vector3.up * starHeight;
 
         guidingStar.localPosition = Vector3.SmoothDamp(
-            guidingStar.localPosition,
-            targetPos,
-            ref velocity,
-            0.18f
-        );
+      guidingStar.localPosition,
+      targetPos,
+      ref velocity,
+      0.18f,
+      Mathf.Infinity,
+      Time.unscaledDeltaTime
+  );
     }
 
     void AnimateSelection()
@@ -139,32 +142,24 @@ public class CelestialMenuController : MonoBehaviour
         }
     }
 
-    void ActivateOption()
+    void OnEnable()
     {
-        if (index == 0)
-            StartGame();
+        ResetSelection();
 
-        if (index == 1)
-            FindObjectOfType<MenuManager>().OpenMenu(6);
-
-        if (index == 2)
-        {
-        #if UNITY_EDITOR
-                 UnityEditor.EditorApplication.isPlaying = false;
-        #else
-            Application.Quit();
-        #endif
-        }
-
-        if (index == 3)
-            FindObjectOfType<MenuManager>().OpenMenu(1);
+        FindObjectOfType<NavigationFooterUI>()
+            .SetMenuType(NavigationFooterUI.MenuType.Pause);
     }
 
-    void StartGame()
+    void ResetSelection()
     {
-        var pause = FindObjectOfType<PauseSystem>();
+        index = 0;
 
-        if (pause != null)
-            pause.Resume(); // uses CameraDirector internally
+        for (int i = 0; i < halos.Length; i++)
+            halos[i].Highlight(false);
+
+        if (halos.Length > 0)
+            halos[0].Highlight(true);
+
+        timer = 0;
     }
 }

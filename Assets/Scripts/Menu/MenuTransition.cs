@@ -37,6 +37,22 @@ public class MenuManager : MonoBehaviour
         currentT.localPosition = Vector3.zero;
     }
 
+    public void OpenMenuInstant(int index)
+    {
+        foreach (var m in menuControllers)
+            m.gameObject.SetActive(false);
+
+        currentIndex = index;
+
+        currentMenu = menuControllers[index];
+        currentT = currentMenu.transform;
+
+        currentMenu.gameObject.SetActive(true);
+        currentMenu.enabled = true;
+
+        currentT.localPosition = Vector3.zero;
+    }
+
     public void OpenMenu(int index)
     {
         if (transitioning) return;
@@ -64,7 +80,7 @@ public class MenuManager : MonoBehaviour
     {
         if (!transitioning) return;
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         float t = Mathf.Clamp01(timer / slideDuration);
         float curveHeight = 10f;
@@ -130,6 +146,10 @@ public class MenuManager : MonoBehaviour
     {
         return transitioning;
     }
-
+    public void SetMenusActive(bool active)
+    {
+        foreach (var m in menuControllers)
+            m.gameObject.SetActive(active);
+    }
 
 }

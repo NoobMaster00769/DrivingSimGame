@@ -13,17 +13,20 @@ public class NavigationFooterUI : MonoBehaviour
     public string horizontalKeyboard = "A/D Navigate   SPACE Select   ESC Back";
     public string verticalKeyboard = "W/S Navigate   SPACE Select   ESC Back";
     public string sliderKeyboard = "A/D Select   W/S Adjust   SPACE Select   ESC Back";
+    public string pauseKeyboard = "A/D Navigate   SPACE Select   ESC Resume";
 
     [Header("Controller Layouts")]
     public string horizontalController = "LS Navigate   A Select   B Back";
     public string verticalController = "LS Navigate   A Select   B Back";
     public string sliderController = "LS Navigate   A Select   B Back";
+    public string pauseController = "LS Navigate   A Select   B Resume";
 
     public enum MenuType
     {
         Horizontal,
         Vertical,
-        Slider
+        Slider,
+        Pause
     }
 
     public MenuType currentMenuType;
@@ -69,6 +72,11 @@ public class NavigationFooterUI : MonoBehaviour
             case MenuType.Slider:
                 footerText.text = currentMode == InputMode.Keyboard ?
                     sliderKeyboard : sliderController;
+                break;
+
+            case MenuType.Pause:
+                footerText.text = currentMode == InputMode.Keyboard ?
+                    pauseKeyboard : pauseController;
                 break;
         }
     }

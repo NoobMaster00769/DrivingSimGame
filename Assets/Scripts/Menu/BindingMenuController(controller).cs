@@ -29,7 +29,7 @@ public class BindingListMenuController_controller : MonoBehaviour
 
         DetectInputMode();
 
-        timer += Time.deltaTime;
+        timer += Time.unscaledDeltaTime;
 
         if (!rebinding)
             HandleNavigation();
@@ -106,9 +106,11 @@ public class BindingListMenuController_controller : MonoBehaviour
         }
 
         // ⌨️ KEYBOARD INPUT (ALSO ALLOWED HERE)
-        vertical += input.Throttle; // W/S
+        // Keyboard
+        if (Keyboard.current.wKey.isPressed) vertical += 1f;
+        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
-        if (input.Brake > 0.5f) // Space
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -179,14 +181,14 @@ public class BindingListMenuController_controller : MonoBehaviour
         Vector3 target =
             options[index].position +
             Vector3.left * starOffsetX;
-
-        guidingStar.position =
-            Vector3.SmoothDamp(
-                guidingStar.position,
-                target,
-                ref velocity,
-                0.15f
-            );
+        guidingStar.position = Vector3.SmoothDamp(
+            guidingStar.position,
+            target,
+            ref velocity,
+            0.15f,
+            Mathf.Infinity,
+            Time.unscaledDeltaTime
+        );
     }
 
     // --------------------------------------------------
