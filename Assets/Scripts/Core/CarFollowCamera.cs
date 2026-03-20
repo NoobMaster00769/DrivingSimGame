@@ -9,7 +9,7 @@ public class CarFollowCamera : MonoBehaviour
     public float baseFOV = 55f;
     public float speedFOV = 6f;
     public float fovSmooth = 2f;
-   
+
     [Header("Void Effect")]
     public float voidFOV = 30f;
     public float voidFOVSpeed = 3f;
@@ -49,6 +49,10 @@ public class CarFollowCamera : MonoBehaviour
     [Header("Forward Bias")]
     public float forwardBiasStrength = 2.5f;
 
+    [Header("Look Resistance")]
+    public float maxLookAngle = 70f;   // where resistance becomes strong
+    public float resistanceStrength = 4f;
+
     float suspensionTimer;
 
     Camera cam;
@@ -85,7 +89,6 @@ public class CarFollowCamera : MonoBehaviour
 
         Vector3 desiredPosition = target.TransformPoint(baseOffset);
 
-        // breathing motion (camera subtly moves forward/back)
         float breath = Mathf.Sin(breathTimer) * breathAmount;
         desiredPosition += target.forward * breath;
 
@@ -100,23 +103,22 @@ public class CarFollowCamera : MonoBehaviour
 
         float finalFOV = Mathf.Lerp(targetFOV, voidFOV, voidBlend);
 
-
-
         cam.fieldOfView = Mathf.Lerp(
             cam.fieldOfView,
             finalFOV,
             Time.deltaTime * voidFOVSpeed
         );
 
-        // 🔥 VOID GRAVITY PULL
         if (voidBlend > 0.01f)
         {
             desiredPosition += Vector3.down * voidBlend * 2.5f;
-        }// 🔥 DARKEN VIEW DIRECTION
+        }
+
         Vector3 forwardDrop =
             transform.forward * -voidBlend * 2f;
 
         desiredPosition += forwardDrop;
+
         suspensionTimer += Time.deltaTime * suspensionSpeed;
 
         float suspension =
@@ -135,7 +137,6 @@ public class CarFollowCamera : MonoBehaviour
 
         desiredPosition += target.up * shake;
 
-        // cosmic floating drift
         float drift = Mathf.Sin(driftTimer) * driftAmount;
         desiredPosition += target.right * drift;
 
@@ -147,15 +148,22 @@ public class CarFollowCamera : MonoBehaviour
         );
 
         //---------------------------------
-        // LOOK AHEAD
+        // LOOK AHEAD (SOFT RESISTANCE)
         //---------------------------------
 
-
-
-        Vector3 forwardDir =
+        Vector3 velocityDir =
             rb && rb.velocity.sqrMagnitude > 0.5f
             ? rb.velocity.normalized
             : target.forward;
+
+        float angle = Vector3.Angle(target.forward, velocityDir);
+
+        // 🔥 soft resistance curve
+        float resistance = Mathf.InverseLerp(maxLookAngle * 0.5f, maxLookAngle, angle);
+        resistance = Mathf.Pow(resistance, resistanceStrength);
+
+        Vector3 forwardDir =
+            Vector3.Slerp(velocityDir, target.forward, resistance);
 
         smoothLookDir = Vector3.Lerp(
             smoothLookDir,
@@ -164,7 +172,7 @@ public class CarFollowCamera : MonoBehaviour
         );
 
         Vector3 turnOffset =
-    target.right * Vector3.Dot(target.right, smoothLookDir) * anticipationAmount;
+            target.right * Vector3.Dot(target.right, smoothLookDir) * anticipationAmount;
 
         Vector3 lookPoint =
             target.position +
@@ -178,7 +186,7 @@ public class CarFollowCamera : MonoBehaviour
             );
 
         //---------------------------------
-        // CAMERA BANKING (emotion)
+        // CAMERA BANKING
         //---------------------------------
 
         float sideways =
@@ -188,7 +196,7 @@ public class CarFollowCamera : MonoBehaviour
             Mathf.Clamp(-sideways * bankAmount, -bankAmount, bankAmount);
 
         float turnImpact =
-    Mathf.Abs(sideways) * 1.5f;
+            Mathf.Abs(sideways) * 1.5f;
 
         desiredPosition += target.right * turnImpact;
 

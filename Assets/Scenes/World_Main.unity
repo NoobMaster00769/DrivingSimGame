@@ -2053,10 +2053,10 @@ MonoBehaviour:
   roadState: {fileID: 155815526}
   director: {fileID: 1064358333}
   waterMaterial: {fileID: 2100000, guid: afb9a70acc433dd4ba687e9b328c8d02, type: 2}
-  minWaveScale: 0.018
-  maxWaveScale: 0.025
-  minWaveSpeed: 0.6
-  maxWaveSpeed: 0.65
+  minWaveScale: 0.015
+  maxWaveScale: 0.021
+  minWaveSpeed: 0.5
+  maxWaveSpeed: 0.55
   baseSkyRotationSpeed: 0.2
   arcGradients:
   - serializedVersion: 2
@@ -3972,8 +3972,6 @@ MonoBehaviour:
   waterOffsetY: -3
   waterWidth: 200
   sideWaterCount: 4
-  backwardWaterCount: 6
-  backwardWaterSpacing: 200
   starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
   starRoadOffsetY: 0.25
   starWidthBleed: 1.4
