@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
 public class CarFollowCamera : MonoBehaviour
@@ -9,6 +9,12 @@ public class CarFollowCamera : MonoBehaviour
     public float baseFOV = 55f;
     public float speedFOV = 6f;
     public float fovSmooth = 2f;
+   
+    [Header("Void Effect")]
+    public float voidFOV = 30f;
+    public float voidFOVSpeed = 3f;
+    public float voidShake = 0.4f;
+    float voidBlend = 0f;
 
     [Header("Framing")]
     public Vector3 baseOffset = new Vector3(0f, 7f, -11f);
@@ -39,6 +45,9 @@ public class CarFollowCamera : MonoBehaviour
 
     [Header("Turn Anticipation")]
     public float anticipationAmount = 3f;
+
+    [Header("Forward Bias")]
+    public float forwardBiasStrength = 2.5f;
 
     float suspensionTimer;
 
@@ -85,13 +94,29 @@ public class CarFollowCamera : MonoBehaviour
         float targetFOV =
             baseFOV + Mathf.Clamp(speed * 0.15f, 0f, speedFOV);
 
+        float targetVoid = LevelLayoutGenerator.isInVoid ? 1f : 0f;
+
+        voidBlend = Mathf.Lerp(voidBlend, targetVoid, Time.deltaTime * 2f);
+
+        float finalFOV = Mathf.Lerp(targetFOV, voidFOV, voidBlend);
+
+
+
         cam.fieldOfView = Mathf.Lerp(
             cam.fieldOfView,
-            targetFOV,
-            Time.deltaTime * fovSmooth
+            finalFOV,
+            Time.deltaTime * voidFOVSpeed
         );
 
+        // 🔥 VOID GRAVITY PULL
+        if (voidBlend > 0.01f)
+        {
+            desiredPosition += Vector3.down * voidBlend * 2.5f;
+        }// 🔥 DARKEN VIEW DIRECTION
+        Vector3 forwardDrop =
+            transform.forward * -voidBlend * 2f;
 
+        desiredPosition += forwardDrop;
         suspensionTimer += Time.deltaTime * suspensionSpeed;
 
         float suspension =
@@ -99,9 +124,14 @@ public class CarFollowCamera : MonoBehaviour
 
         desiredPosition += target.up * suspension;
 
-        float shake =
-    Mathf.PerlinNoise(Time.time * 6f, 0f) *
-    Mathf.Clamp01(speed * 0.02f) * 0.2f;
+        float baseShake =
+            Mathf.PerlinNoise(Time.time * 6f, 0f) *
+            Mathf.Clamp01(speed * 0.02f) * 0.2f;
+
+        float voidExtra =
+            voidBlend * voidShake * 1.5f;
+
+        float shake = baseShake + voidExtra;
 
         desiredPosition += target.up * shake;
 
@@ -119,6 +149,8 @@ public class CarFollowCamera : MonoBehaviour
         //---------------------------------
         // LOOK AHEAD
         //---------------------------------
+
+
 
         Vector3 forwardDir =
             rb && rb.velocity.sqrMagnitude > 0.5f

@@ -3971,7 +3971,9 @@ MonoBehaviour:
   waterPrefab: {fileID: 4050938500205680382, guid: 000c44fc089f8f04285e12e2a3cfd18b, type: 3}
   waterOffsetY: -3
   waterWidth: 200
-  sideWaterCount: 2
+  sideWaterCount: 4
+  backwardWaterCount: 6
+  backwardWaterSpacing: 200
   starRoadPrefab: {fileID: 2459259389070916698, guid: d48d0460f7282bd43a28d88765753308, type: 3}
   starRoadOffsetY: 0.25
   starWidthBleed: 1.4
@@ -20866,6 +20868,9 @@ MonoBehaviour:
   baseFOV: 55
   speedFOV: 6
   fovSmooth: 2
+  voidFOV: 30
+  voidFOVSpeed: 3
+  voidShake: 0.4
   baseOffset: {x: 0, y: 6.8, z: -8.5}
   positionSmooth: 1.6
   rotationSmooth: 1.8
@@ -20880,6 +20885,7 @@ MonoBehaviour:
   suspensionAmount: 0.18
   suspensionSpeed: 6
   anticipationAmount: 3
+  forwardBiasStrength: 2.5
 --- !u!1 &2088601604
 GameObject:
   m_ObjectHideFlags: 0

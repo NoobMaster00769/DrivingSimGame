@@ -59,6 +59,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float branchStrength = 0.6f;
     public float branchDuration = 6f;
 
+    public static bool isInVoid = false;
+    float voidTimer = 0f;
+
     float branchTimer;
     float branchDirection;
     bool branchActive;
@@ -96,21 +99,37 @@ public class LevelLayoutGenerator : MonoBehaviour
             input.ConsumeReset();
         }
 
-
         float distanceToEnd =
             Vector3.Distance(player.position, currentPosition);
 
-        // 🔥 Dynamic lookahead based on curvature intensity
         int dynamicChunksAhead = chunksAhead;
 
         if (roadState != null && roadState.tempest > 0.6f)
         {
-            // During spiral/high intensity reduce prebuild distance
             dynamicChunksAhead = Mathf.Max(6, chunksAhead / 2);
         }
 
         if (distanceToEnd < chunkLength * dynamicChunksAhead * 0.6f)
             SpawnNextChunk();
+
+        // VOID CHECK (keep this)
+        if (IsPlayerOffRoad())
+        {
+            voidTimer += Time.deltaTime;
+            isInVoid = true;
+
+            if (voidTimer > 0.35f && !isRecovering)
+            {
+                StartCoroutine(RecoverRoutine());
+                voidTimer = 0f;
+                isInVoid = false;
+            }
+        }
+        else
+        {
+            voidTimer = 0f;
+            isInVoid = false;
+        }
 
         UpdateBranching();
         Cleanup();
@@ -697,11 +716,14 @@ public class LevelLayoutGenerator : MonoBehaviour
             }
         }
 
-        // always align FORWARD (not based on velocity anymore)
-        if (Vector3.Dot(player.forward, bestForward) < 0f)
-            bestForward = -bestForward;
 
-        Vector3 newPos = bestPoint + Vector3.up * 2.5f;
+        // 🔥 push slightly forward along road
+        Vector3 forwardOffset = bestForward * 3f;
+
+        Vector3 newPos =
+            bestPoint +
+            forwardOffset +
+            Vector3.up * 2.5f;
 
         player.position = newPos;
         player.rotation = Quaternion.LookRotation(bestForward, Vector3.up);
@@ -715,6 +737,34 @@ public class LevelLayoutGenerator : MonoBehaviour
         rb.angularVelocity = Vector3.zero;
 
         isRecovering = false;
+    }
+
+    bool IsPlayerOffRoad()
+    {
+        if (roadCenters.Count < 2) return false;
+
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < roadCenters.Count - 1; i++)
+        {
+            Vector3 a = roadCenters[i];
+            Vector3 b = roadCenters[i + 1];
+
+            Vector3 ab = b - a;
+            Vector3 ap = player.position - a;
+
+            float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
+            Vector3 closest = a + ab * t;
+
+            float dist = Vector3.Distance(player.position, closest);
+
+            if (dist < minDist)
+                minDist = dist;
+        }
+
+        // 🔥 THIS VALUE IS KEY
+        // road half width ~5 → give buffer
+        return minDist > 6.5f;
     }
 
 
