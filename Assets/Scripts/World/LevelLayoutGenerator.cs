@@ -90,11 +90,12 @@ public class LevelLayoutGenerator : MonoBehaviour
     {
         if (!player) return;
 
-        if (input.ResetCar)
+        if (input.ResetCar && !isRecovering)
         {
-            RecoverCar();
+            StartCoroutine(RecoverRoutine());
             input.ConsumeReset();
         }
+
 
         float distanceToEnd =
             Vector3.Distance(player.position, currentPosition);
@@ -655,6 +656,67 @@ public class LevelLayoutGenerator : MonoBehaviour
                 branchActive = false;
         }
     }
+
+    bool isRecovering = false;
+
+    IEnumerator RecoverRoutine()
+    {
+        if (roadCenters.Count < 2) yield break;
+
+        isRecovering = true;
+
+        Rigidbody rb = player.GetComponent<Rigidbody>();
+        if (rb == null) yield break;
+
+        // 🧊 HARD FREEZE (this is the missing piece)
+        rb.isKinematic = true;
+
+        // 🔍 find best segment
+        Vector3 bestPoint = roadCenters[0];
+        Vector3 bestForward = currentForward;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < roadCenters.Count - 1; i++)
+        {
+            Vector3 a = roadCenters[i];
+            Vector3 b = roadCenters[i + 1];
+
+            Vector3 ab = b - a;
+            Vector3 ap = player.position - a;
+
+            float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
+            Vector3 proj = a + ab * t;
+
+            float d = Vector3.Distance(player.position, proj);
+
+            if (d < minDist)
+            {
+                minDist = d;
+                bestPoint = proj;
+                bestForward = ab.normalized;
+            }
+        }
+
+        // always align FORWARD (not based on velocity anymore)
+        if (Vector3.Dot(player.forward, bestForward) < 0f)
+            bestForward = -bestForward;
+
+        Vector3 newPos = bestPoint + Vector3.up * 2.5f;
+
+        player.position = newPos;
+        player.rotation = Quaternion.LookRotation(bestForward, Vector3.up);
+
+        // wait 1 frame so physics doesn't fight back
+        yield return null;
+
+        // reset physics cleanly
+        rb.isKinematic = false;
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        isRecovering = false;
+    }
+
 
     void Cleanup()
     {
