@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class VehicleInputReader : MonoBehaviour
 {
-
+    public bool PausePressed { get; private set; }
     public float Throttle { get; private set; }
     public float Steering { get; private set; }
     public float Brake { get; private set; }
@@ -59,7 +59,15 @@ public class VehicleInputReader : MonoBehaviour
     {
         input.Disable();
     }
-
+    public void OnPause(InputAction.CallbackContext ctx)
+    {
+        if (ctx.started)
+            PausePressed = true;
+    }
+    public void ConsumePause()
+    {
+        PausePressed = false;
+    }
     // CALLED MANUALLY FROM DrivingState
     public void ConsumeShifts()
     {

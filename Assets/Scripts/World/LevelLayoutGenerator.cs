@@ -68,6 +68,7 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     Vector3 currentPosition;
     Vector3 currentForward;
+    public Vector3 CurrentForward => currentForward;
 
     float smoothCurvature;
     float turnMomentum;
@@ -152,7 +153,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             Instantiate(prefab, currentPosition, roadRotation);
 
         ApplySectionReactivity(chunk);
-        SpawnWaterGrid(chunk.transform.position);
+
         SpawnStarRoadFX(chunk);
 
         BoxCollider roadCol = chunk.GetComponent<BoxCollider>();
@@ -557,30 +558,6 @@ public class LevelLayoutGenerator : MonoBehaviour
             new ParticleSystem.MinMaxCurve(1f, curve);
     }
 
-    void SpawnWaterGrid(Vector3 basePosition)
-    {
-        if (!waterPrefab) return;
-
-        Quaternion waterRotation =
-            Quaternion.LookRotation(currentForward, Vector3.up);
-
-        Vector3 centerPos =
-            basePosition + Vector3.up * waterOffsetY;
-
-        SpawnWaterSlab(centerPos, waterRotation);
-
-        Vector3 rightDir =
-            waterRotation * Vector3.right;
-
-        for (int i = 1; i <= sideWaterCount; i++)
-        {
-            Vector3 offset =
-                rightDir * waterWidth * i;
-
-            SpawnWaterSlab(centerPos + offset, waterRotation);
-            SpawnWaterSlab(centerPos - offset, waterRotation);
-        }
-    }
 
     void RecoverCar()
     {
@@ -628,26 +605,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         }
     }
 
-    void SpawnWaterSlab(Vector3 position, Quaternion rotation)
-    {
-        GameObject water =
-            Instantiate(waterPrefab, position, rotation);
 
-        water.transform.localScale =
-            new Vector3(waterWidth, 1f, chunkLength);
-
-        // 🔥 push slightly down (you already had this, keep it)
-        water.transform.position += Vector3.down * 0.6f;
-
-        // 🔥 FIX: force render behind everything
-        var r = water.GetComponent<Renderer>();
-        if (r != null)
-        {
-            r.material = new Material(r.material); // avoid shared issues
-            r.material.renderQueue = 1990; // BELOW your road (2000)
-            r.material.SetInt("_ZWrite", 1); // VERY IMPORTANT
-        }
-    }
     void UpdateBranching()
     {
         if (!enableBranching || roadState == null) return;
@@ -767,7 +725,36 @@ public class LevelLayoutGenerator : MonoBehaviour
         return minDist > 6.5f;
     }
 
+    public Vector3 GetRoadDirectionAt(Vector3 position)
+    {
+        if (roadCenters.Count < 2)
+            return currentForward;
 
+        float minDist = float.MaxValue;
+        Vector3 bestDir = currentForward;
+
+        for (int i = 0; i < roadCenters.Count - 1; i++)
+        {
+            Vector3 a = roadCenters[i];
+            Vector3 b = roadCenters[i + 1];
+
+            Vector3 ab = b - a;
+            Vector3 ap = position - a;
+
+            float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
+            Vector3 proj = a + ab * t;
+
+            float d = Vector3.Distance(position, proj);
+
+            if (d < minDist)
+            {
+                minDist = d;
+                bestDir = ab.normalized;
+            }
+        }
+
+        return bestDir;
+    }
     void Cleanup()
     {
         if (roadChunks.Count <= chunksAhead + chunksBehind)

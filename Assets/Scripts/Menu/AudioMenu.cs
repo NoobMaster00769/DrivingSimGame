@@ -49,7 +49,7 @@ public class AudioMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        // 🔥 UNIVERSAL BACK
+        // 🔥 BACK
         if (Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
         {
@@ -58,36 +58,33 @@ public class AudioMenuController : MonoBehaviour
         }
 
         float horizontal = 0f;
+        float vertical = 0f;
         bool select = false;
 
+        // 🎮 Controller
         if (Gamepad.current != null)
         {
-            horizontal += Gamepad.current.leftStick.x.ReadValue();
+            var stick = Gamepad.current.leftStick.ReadValue();
+
+            horizontal += stick.x;
+            vertical += stick.y;
 
             if (Gamepad.current.buttonSouth.wasPressedThisFrame)
                 select = true;
         }
 
-        // Keyboard
+        // ⌨️ Keyboard
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
+
+        if (Keyboard.current.wKey.isPressed) vertical += 1f;
+        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
-        // navigation
         if (horizontal > 0.6f) ChangeIndex(1);
         if (horizontal < -0.6f) ChangeIndex(-1);
-
-        float vertical = 0f;
-
-        // Keyboard
-        if (Keyboard.current.wKey.isPressed) vertical += 1f;
-        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
-
-        // Controller
-        if (Gamepad.current != null)
-            vertical += Gamepad.current.leftStick.y.ReadValue();
 
         if (vertical > 0.6f) IncreaseValue();
         if (vertical < -0.6f) DecreaseValue();

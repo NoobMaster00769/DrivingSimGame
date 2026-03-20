@@ -54,17 +54,10 @@ public class PauseMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        // 🔥 ESC = RESUME
-        if (Keyboard.current.escapeKey.wasPressedThisFrame ||
-            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
-        {
-            pauseSystem?.Resume();
-            return;
-        }
-
         float horizontal = 0f;
         bool select = false;
 
+        // 🎮 Controller
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -73,10 +66,15 @@ public class PauseMenuController : MonoBehaviour
                 select = true;
         }
 
-        horizontal += input.Steering;
+        // ⌨️ Keyboard
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
+
+        // Steering fallback
+        horizontal += input.Steering;
 
         if (horizontal > 0.6f) ChangeIndex(1);
         if (horizontal < -0.6f) ChangeIndex(-1);

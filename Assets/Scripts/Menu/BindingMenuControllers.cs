@@ -37,8 +37,12 @@ public class BindingListMenuController : MonoBehaviour
 
     void HandleNavigation()
     {
-        // 🔥 ESC handling FIRST
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        // 🔥 UNIVERSAL BACK (Keyboard + Controller)
+        bool backPressed =
+            Keyboard.current.escapeKey.wasPressedThisFrame ||
+            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);
+
+        if (backPressed)
         {
             if (rebinding)
             {
@@ -52,7 +56,6 @@ public class BindingListMenuController : MonoBehaviour
             }
         }
 
-        // ✅ IMPORTANT — ADD THIS BACK
         if (timer < cooldown) return;
 
         float vertical = 0f;
@@ -67,31 +70,17 @@ public class BindingListMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
-        // Keyboard
+        // ⌨️ Keyboard (still allowed)
         if (Keyboard.current.wKey.isPressed) vertical += 1f;
         if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
 
-        // ✅ Movement WITH cooldown reset
-        if (vertical > 0.5f)
-        {
-            ChangeIndex(-1);
-            timer = 0;
-        }
-        else if (vertical < -0.5f)
-        {
-            ChangeIndex(1);
-            timer = 0;
-        }
+        if (vertical > 0.5f) ChangeIndex(-1);
+        if (vertical < -0.5f) ChangeIndex(1);
 
-        if (select)
-        {
-            Activate();
-            timer = 0;
-        }
+        if (select) Activate();
     }
     void OnEnable()
     {

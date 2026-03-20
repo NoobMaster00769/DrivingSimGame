@@ -12,14 +12,55 @@ public class PauseSystem : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            var state = GameStateController.Instance.currentState;
+        var state = GameStateController.Instance.currentState;
 
-            // 🔥 ONLY allow pause trigger
+        bool esc =
+            Keyboard.current != null &&
+            Keyboard.current.escapeKey.wasPressedThisFrame;
+
+        bool start =
+            Gamepad.current != null &&
+            Gamepad.current.startButton.wasPressedThisFrame;
+
+        // ----------------------------------
+        // 🎮 START = ALWAYS TOGGLE
+        // ----------------------------------
+        if (start)
+        {
             if (state == GameState.Driving)
                 EnterPause();
+            else if (state == GameState.Paused)
+                Resume();
+
+            return;
         }
+
+        // ----------------------------------
+        // ⌨️ ESC LOGIC (SMART)
+        // ----------------------------------
+        if (!esc) return;
+
+        if (state == GameState.Driving)
+        {
+            EnterPause();
+        }
+        else if (state == GameState.Paused)
+        {
+            // 🔥 ONLY resume if PAUSE MENU is active
+            if (IsPauseMenuActive())
+            {
+                Resume();
+            }
+            // ❌ otherwise do nothing → menus handle ESC as back
+        }
+    }
+
+    bool IsPauseMenuActive()
+    {
+        if (pauseMenuIndex >= menuManager.menuControllers.Length)
+            return false;
+
+        return menuManager.menuControllers[pauseMenuIndex].gameObject.activeSelf;
     }
 
     void EnterPause()

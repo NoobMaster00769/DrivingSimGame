@@ -377,6 +377,17 @@ public partial class @VehicleInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""a760adca-60b4-4645-9c5c-765e0a3602a5"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""a8d338c5-0f74-4fcb-9b77-e659cb6f00b4"",
                     ""path"": ""<Keyboard>/r"",
                     ""interactions"": """",

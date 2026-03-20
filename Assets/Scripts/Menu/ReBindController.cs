@@ -222,7 +222,6 @@ public class ControllerRebindItem : MonoBehaviour
         var binding = action.bindings[index];
 
         string path = binding.effectivePath;
-
         if (string.IsNullOrEmpty(path))
             path = binding.path;
 
@@ -233,23 +232,64 @@ public class ControllerRebindItem : MonoBehaviour
         }
 
         string readable =
-     InputControlPath.ToHumanReadableString(
-         path,
-         InputControlPath.HumanReadableStringOptions.OmitDevice
-     );
+            InputControlPath.ToHumanReadableString(
+                path,
+                InputControlPath.HumanReadableStringOptions.OmitDevice
+            );
 
-        // 🎮 CONTROLLER FRIENDLY NAMES
+        readable = readable.ToLower();
+
+        bool isPlayStation = false;
+
+        if (Gamepad.current != null)
+        {
+            string name = Gamepad.current.displayName.ToLower();
+
+            if (name.Contains("dualshock") ||
+                name.Contains("dualsense") ||
+                name.Contains("playstation"))
+            {
+                isPlayStation = true;
+            }
+        }
+
+        // -------------------------------
+        // 🎮 BUTTONS
+        // -------------------------------
         readable = readable
-            .Replace("buttonSouth", "A / Cross")
-            .Replace("buttonEast", "B / Circle")
-            .Replace("buttonWest", "X / Square")
-            .Replace("buttonNorth", "Y / Triangle")
-            .Replace("leftShoulder", "LB / L1")
-            .Replace("rightShoulder", "RB / R1")
-            .Replace("leftTrigger", "LT / L2")
-            .Replace("rightTrigger", "RT / R2")
-            .Replace("leftStick", "Left Stick")
-            .Replace("rightStick", "Right Stick");
+            .Replace("button south", isPlayStation ? "Cross" : "A")
+            .Replace("button east", isPlayStation ? "Circle" : "B")
+            .Replace("button west", isPlayStation ? "Square" : "X")
+            .Replace("button north", isPlayStation ? "Triangle" : "Y");
+
+        // -------------------------------
+        // 🎮 SHOULDERS / TRIGGERS
+        // -------------------------------
+        readable = readable
+            .Replace("left shoulder", isPlayStation ? "L1" : "LB")
+            .Replace("right shoulder", isPlayStation ? "R1" : "RB")
+            .Replace("left trigger", isPlayStation ? "L2" : "LT")
+            .Replace("right trigger", isPlayStation ? "R2" : "RT");
+
+        // -------------------------------
+        // 🎮 STICKS
+        // -------------------------------
+        readable = readable
+            .Replace("left stick/x", "Left Stick → Right")
+            .Replace("left stick/y", "Left Stick → Up")
+            .Replace("right stick/x", "Right Stick → Right")
+            .Replace("right stick/y", "Right Stick → Up")
+            .Replace("left stick", "Left Stick")
+            .Replace("right stick", "Right Stick");
+
+        // -------------------------------
+        // 🎮 DPAD
+        // -------------------------------
+        readable = readable
+            .Replace("dpad/up", "D-Pad Up")
+            .Replace("dpad/down", "D-Pad Down")
+            .Replace("dpad/left", "D-Pad Left")
+            .Replace("dpad/right", "D-Pad Right");
 
         keyText.text = readable.ToUpper();
     }

@@ -3,8 +3,12 @@
 public class WorldVisualController : MonoBehaviour
 {
     public RoadState roadState;
-    public WorldEventDirector director;   // 🔥 link this
-    public Material waterMaterial;
+    public WorldEventDirector director;
+
+    [Header("Water Reference")]
+    public Renderer waterRenderer;
+
+    Material runtimeMat;
 
     [Header("Wave Motion")]
     public float minWaveScale = 0.01f;
@@ -16,16 +20,25 @@ public class WorldVisualController : MonoBehaviour
     public float baseSkyRotationSpeed = 0.2f;
 
     [Header("Arc Sky Gradients (Match Arc Index Order)")]
-    public Gradient[] arcGradients;   // MUST match arc indices (0–6)
+    public Gradient[] arcGradients;
 
     public float arcDuration = 480f;
 
     float skyRotation;
     float arcTimer;
 
+    void Start()
+    {
+        if (waterRenderer != null)
+        {
+            // 🔥 IMPORTANT: get instance material (not shared)
+            runtimeMat = waterRenderer.material;
+        }
+    }
+
     void Update()
     {
-        if (!roadState || !waterMaterial || !director)
+        if (!roadState || !director || runtimeMat == null)
             return;
 
         arcTimer += Time.deltaTime;
@@ -33,7 +46,7 @@ public class WorldVisualController : MonoBehaviour
         if (arcTimer > arcDuration)
             arcTimer = 0f;
 
-        UpdateWaterMotion();   // untouched
+        UpdateWaterMotion();
         UpdateSkybox();
         UpdateSkyColor();
     }
@@ -48,8 +61,14 @@ public class WorldVisualController : MonoBehaviour
         float waveSpeed =
             Mathf.Lerp(minWaveSpeed, maxWaveSpeed, 0.5f);
 
-        waterMaterial.SetFloat("_WaveScale", waveScale);
-        waterMaterial.SetFloat("_WaveSpeed", waveSpeed);
+        runtimeMat.SetFloat("_WaveScale", waveScale);
+        runtimeMat.SetFloat("_WaveSpeed", waveSpeed);
+
+        // 🔥 ADD subtle UV drift (breaks mirror/static look)
+        Vector2 offset =
+            new Vector2(Time.time * 0.02f, Time.time * 0.015f);
+
+        runtimeMat.SetVector("_UVOffset", offset); // only works if shader supports it
     }
 
     void UpdateSkybox()
@@ -77,7 +96,6 @@ public class WorldVisualController : MonoBehaviour
 
         RenderSettings.skybox.SetColor("_Tint", c);
 
-        // ⭐ Force realtime environment update
         DynamicGI.UpdateEnvironment();
     }
 }

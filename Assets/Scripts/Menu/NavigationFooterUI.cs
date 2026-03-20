@@ -9,17 +9,20 @@ public class NavigationFooterUI : MonoBehaviour
     enum InputMode { Keyboard, Controller }
     InputMode currentMode;
 
+    enum ControllerType { Xbox, PlayStation, Generic }
+    ControllerType controllerType;
+
     [Header("Keyboard Layouts")]
     public string horizontalKeyboard = "A/D Navigate   SPACE Select   ESC Back";
     public string verticalKeyboard = "W/S Navigate   SPACE Select   ESC Back";
     public string sliderKeyboard = "A/D Select   W/S Adjust   SPACE Select   ESC Back";
     public string pauseKeyboard = "A/D Navigate   SPACE Select   ESC Resume";
 
-    [Header("Controller Layouts")]
-    public string horizontalController = "LS Navigate   A Select   B Back";
-    public string verticalController = "LS Navigate   A Select   B Back";
-    public string sliderController = "LS Navigate   A Select   B Back";
-    public string pauseController = "LS Navigate   A Select   B Resume";
+    [Header("Controller Layouts (Dynamic)")]
+    string horizontalController;
+    string verticalController;
+    string sliderController;
+    string pauseController;
 
     public enum MenuType
     {
@@ -34,12 +37,17 @@ public class NavigationFooterUI : MonoBehaviour
     void Update()
     {
         DetectInputMode();
+        DetectControllerType();
+        BuildControllerStrings();
         UpdateFooter();
     }
 
+    // ==================================================
+    // INPUT MODE DETECTION
+    // ==================================================
     void DetectInputMode()
     {
-        if (Keyboard.current.anyKey.wasPressedThisFrame)
+        if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
             currentMode = InputMode.Keyboard;
 
         if (Gamepad.current != null)
@@ -52,9 +60,75 @@ public class NavigationFooterUI : MonoBehaviour
         }
     }
 
+    // ==================================================
+    // CONTROLLER TYPE DETECTION
+    // ==================================================
+    void DetectControllerType()
+    {
+        if (Gamepad.current == null)
+        {
+            controllerType = ControllerType.Generic;
+            return;
+        }
+
+        string name = Gamepad.current.name.ToLower();
+        string display = Gamepad.current.displayName.ToLower();
+
+        if (name.Contains("dualshock") || name.Contains("dualsense") ||
+            display.Contains("playstation"))
+        {
+            controllerType = ControllerType.PlayStation;
+        }
+        else if (name.Contains("xinput") || name.Contains("xbox") ||
+                 display.Contains("xbox"))
+        {
+            controllerType = ControllerType.Xbox;
+        }
+        else
+        {
+            controllerType = ControllerType.Generic;
+        }
+    }
+
+    // ==================================================
+    // BUILD CONTROLLER TEXT BASED ON TYPE
+    // ==================================================
+    void BuildControllerStrings()
+    {
+        string select, back, pause;
+
+        switch (controllerType)
+        {
+            case ControllerType.PlayStation:
+                select = "✕";
+                back = "○";
+                pause = "Options";
+                break;
+
+            case ControllerType.Xbox:
+                select = "A";
+                back = "B";
+                pause = "START";
+                break;
+
+            default:
+                select = "South";
+                back = "East";
+                pause = "START";
+                break;
+        }
+
+        horizontalController = $"LS Navigate   {select} Select   {back} Back";
+        verticalController = $"LS Navigate   {select} Select   {back} Back";
+        sliderController = $"LS Navigate   {select} Select   {back} Back";
+        pauseController = $"LS Navigate   {select} Select   {pause} Resume";
+    }
+
+    // ==================================================
+    // APPLY TEXT
+    // ==================================================
     void UpdateFooter()
     {
-
         if (footerText == null) return;
 
         switch (currentMenuType)
@@ -81,7 +155,9 @@ public class NavigationFooterUI : MonoBehaviour
         }
     }
 
-    // 🔥 Call this from menus
+    // ==================================================
+    // EXTERNAL CALL
+    // ==================================================
     public void SetMenuType(MenuType type)
     {
         currentMenuType = type;

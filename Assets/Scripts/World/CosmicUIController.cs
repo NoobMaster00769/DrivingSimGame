@@ -14,6 +14,25 @@ public class CosmicUIController : MonoBehaviour
     float revealTimer;
     float revealFactor = 0f;
 
+    [Header("Clear Driving UI")]
+
+    public float textHeight = 140f;
+    public float textScale = 12f;
+    public float textFadeSpeed = 4f;
+
+    public LevelLayoutGenerator layout;
+
+    GameObject wrongText;
+    GameObject upshiftText;
+    GameObject downshiftText;
+
+    TextMesh wrongMesh;
+    TextMesh upMesh;
+    TextMesh downMesh;
+
+    float wrongAlpha;
+    float upAlpha;
+    float downAlpha;
 
     [Header("Sky Placement")]
     public float skyDistance = 1000f;
@@ -60,7 +79,7 @@ public class CosmicUIController : MonoBehaviour
     List<Renderer> arcStars = new();
     List<Renderer> hazeStars = new();
     List<GameObject> gearStars = new();
-    List<LineRenderer> gearLines = new();
+
 
     Transform arcRoot;
     Transform glyphRoot;
@@ -73,6 +92,7 @@ public class CosmicUIController : MonoBehaviour
         CreateRoots();
         BuildArc();
         BuildHaze();
+        CreateDrivingTexts();
     }
 
     void LateUpdate()
@@ -85,8 +105,150 @@ public class CosmicUIController : MonoBehaviour
 
         UpdateArcFill();
         UpdateGlyph();
+        UpdateDrivingTextUI();
     }
 
+    void UpdateDrivingTextUI()
+    {
+        if (!vehicle || vehicle.rb == null) return;
+
+        Vector3 vel = vehicle.rb.velocity;
+
+        if (vel.sqrMagnitude < 1f)
+        {
+            FadeAllTexts(0f);
+            return;
+        }
+
+        // ✅ USE ROAD DIRECTION (FIXED)
+        Vector3 roadForward = layout.GetRoadDirectionAt(vehicle.transform.position);
+        float alignment = Vector3.Dot(roadForward, vel.normalized);
+
+        bool wrong = alignment < -0.2f;
+
+        float rpmNorm = vehicle.engineRPM / vehicle.maxRPM;
+
+        bool up =
+            rpmNorm > 0.85f &&
+            vehicle.currentGear > 0 &&
+            vehicle.currentGear < vehicle.forwardGearRatios.Length;
+
+        bool down =
+            rpmNorm < 0.25f &&
+            vehicle.currentGear > 1;
+
+        // PRIORITY SYSTEM
+        if (wrong)
+        {
+            wrongAlpha = Mathf.Lerp(wrongAlpha, 1f, Time.deltaTime * textFadeSpeed);
+            upAlpha = Mathf.Lerp(upAlpha, 0f, Time.deltaTime * textFadeSpeed);
+            downAlpha = Mathf.Lerp(downAlpha, 0f, Time.deltaTime * textFadeSpeed);
+        }
+        else
+        {
+            wrongAlpha = Mathf.Lerp(wrongAlpha, 0f, Time.deltaTime * textFadeSpeed);
+
+            if (up && !down)
+            {
+                upAlpha = Mathf.Lerp(upAlpha, 1f, Time.deltaTime * textFadeSpeed);
+                downAlpha = Mathf.Lerp(downAlpha, 0f, Time.deltaTime * textFadeSpeed);
+            }
+            else if (down && !up)
+            {
+                downAlpha = Mathf.Lerp(downAlpha, 1f, Time.deltaTime * textFadeSpeed);
+                upAlpha = Mathf.Lerp(upAlpha, 0f, Time.deltaTime * textFadeSpeed);
+            }
+            else
+            {
+                upAlpha = Mathf.Lerp(upAlpha, 0f, Time.deltaTime * textFadeSpeed);
+                downAlpha = Mathf.Lerp(downAlpha, 0f, Time.deltaTime * textFadeSpeed);
+            }
+        }
+
+        ApplyText(wrongText, wrongMesh, wrongAlpha, Color.red, 1.3f);
+        ApplyText(upshiftText, upMesh, upAlpha, Color.white, 1f);
+        ApplyText(downshiftText, downMesh, downAlpha, Color.white, 1f);
+    }
+
+    string GetResetKeyLabel()
+    {
+        if (UnityEngine.InputSystem.Gamepad.current != null)
+        {
+            var name = UnityEngine.InputSystem.Gamepad.current.name.ToLower();
+
+            if (name.Contains("dualshock") || name.Contains("dualsense"))
+                return "△";
+
+            return "Y"; // xbox default
+        }
+
+        return "R"; // keyboard fallback
+    }
+
+    void ApplyText(GameObject obj, TextMesh mesh, float alpha, Color color, float scaleMul)
+    {
+        if (!obj) return;
+
+        Vector3 localPos =
+            glyphRoot.localPosition +
+            new Vector3(100f, 10f, 0f);
+
+        obj.transform.localPosition = localPos;
+
+        // 👉 face camera correctly
+        obj.transform.rotation =
+            Quaternion.LookRotation(
+                obj.transform.position - mainCamera.transform.position
+            );
+
+        // 🔥 SCALE FIX: compensate for distance
+        float distance =
+            Vector3.Distance(mainCamera.transform.position, obj.transform.position);
+
+        float scale =
+            distance * 0.0025f; // THIS is the key
+
+        obj.transform.localScale =
+            Vector3.one * scale * scaleMul;
+
+        // apply alpha
+        Color c = color;
+        c.a = alpha;
+
+        mesh.color = c;
+    }
+    void FadeAllTexts(float target)
+    {
+        wrongAlpha = Mathf.Lerp(wrongAlpha, target, Time.deltaTime * textFadeSpeed);
+        upAlpha = Mathf.Lerp(upAlpha, target, Time.deltaTime * textFadeSpeed);
+        downAlpha = Mathf.Lerp(downAlpha, target, Time.deltaTime * textFadeSpeed);
+    }
+    void CreateDrivingTexts()
+    {
+        string key = GetResetKeyLabel();
+        wrongText = CreateText("WRONG WAY • PRESS " + key, Color.red);
+        upshiftText = CreateText("SHIFT UP ↑", Color.white);
+        downshiftText = CreateText("SHIFT DOWN ↓", Color.white);
+
+        wrongMesh = wrongText.GetComponent<TextMesh>();
+        upMesh = upshiftText.GetComponent<TextMesh>();
+        downMesh = downshiftText.GetComponent<TextMesh>();
+    }
+    GameObject CreateText(string content, Color color)
+    {
+        GameObject go = new GameObject(content);
+        go.transform.parent = transform;
+
+        TextMesh tm = go.AddComponent<TextMesh>();
+        tm.text = content;
+        tm.characterSize = textScale;
+        tm.anchor = TextAnchor.MiddleCenter;
+        tm.alignment = TextAlignment.Center;
+
+        tm.color = new Color(color.r, color.g, color.b, 0f);
+
+        return go;
+    }
     void UpdateReveal()
     {
         if (revealFactor < 1f)
@@ -103,6 +265,10 @@ public class CosmicUIController : MonoBehaviour
             glyphRoot.Rotate(Vector3.forward,
                 glyphRotationSpeed * Time.deltaTime,
                 Space.Self);
+        }
+        if (wrongMesh != null)
+        {
+            wrongMesh.text = "WRONG WAY • PRESS " + GetResetKeyLabel();
         }
     }
 
@@ -359,7 +525,7 @@ public class CosmicUIController : MonoBehaviour
             gearStars.Add(star);
         }
 
-        CreateGlyphLines(points);
+
     }
 
     IEnumerator GlyphShimmer()
@@ -421,38 +587,13 @@ public class CosmicUIController : MonoBehaviour
         return points;
     }
 
-    void CreateGlyphLines(List<Vector3> points)
-    {
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            GameObject lineObj = new GameObject("GlyphLine");
-            lineObj.transform.parent = glyphRoot;
-
-            LineRenderer lr = lineObj.AddComponent<LineRenderer>();
-            lr.material = lineMaterial;
-            lr.positionCount = 2;
-            lr.useWorldSpace = false;
-
-            lr.SetPosition(0, points[i]);
-            lr.SetPosition(1, points[i + 1]);
-
-            lr.startWidth = arcRadius * 0.0008f * glyphScaleFactor;
-            lr.endWidth = arcRadius * 0.0008f * glyphScaleFactor;
-
-            Color faint = new Color(1f, 1f, 1f, 0.1f);
-            lr.startColor = faint;
-            lr.endColor = faint;
-
-            gearLines.Add(lr);
-        }
-    }
 
     void ClearGlyph()
     {
         foreach (var s in gearStars) Destroy(s);
-        foreach (var l in gearLines) Destroy(l.gameObject);
+
 
         gearStars.Clear();
-        gearLines.Clear();
+
     }
 }

@@ -48,35 +48,68 @@ public class DrivingState : VehicleState
     // GEAR SHIFT
     // ==============================
 
+    float shiftCooldown = 0f;
+
     void HandleGearShift()
     {
-        if (context.clutch < 0.85f) return;
-
         float speed = context.rb.velocity.magnitude;
 
-        // SHIFT UP (soft gating)
-        if (context.input.ShiftUp &&
-            context.currentGear < context.forwardGearRatios.Length)
-        {
-            float minSpeed =
-                context.currentGear * context.minSpeedForGearFactor;
+        bool shiftUp = context.input.ShiftUp;
+        bool shiftDown = context.input.ShiftDown;
 
-            if (speed > minSpeed * 0.6f) // soft allowance
+        // ⛔ prevent rapid spam
+        if (shiftCooldown > 0f)
+        {
+            shiftCooldown -= Time.fixedDeltaTime;
+            context.input.ConsumeShifts();
+            return;
+        }
+
+        // ---------------- SHIFT UP ----------------
+        if (shiftUp)
+        {
+            // neutral → 1 (easy, no clutch needed)
+            if (context.currentGear == 0)
             {
-                context.currentGear++;
+                context.currentGear = 1;
+                shiftCooldown = 0.25f;
+            }
+            else if (context.clutch > 0.5f) // ✔ clutch still matters but forgiving
+            {
+                if (context.currentGear < context.forwardGearRatios.Length)
+                {
+                    int nextGear = context.currentGear + 1;
+
+                    // 🔥 LIGHT speed gate (not restrictive)
+                    float requiredSpeed =
+                        nextGear * context.minSpeedForGearFactor * 0.7f;
+
+                    if (speed > requiredSpeed)
+                    {
+                        context.currentGear = nextGear;
+                        shiftCooldown = 0.3f; // 🔥 THIS FIXES INSTANT 1→5
+                    }
+                }
             }
         }
 
-        // SHIFT DOWN
-        if (context.input.ShiftDown &&
-            context.currentGear > 0)
+        // ---------------- SHIFT DOWN ----------------
+        if (shiftDown)
         {
-            context.currentGear--;
+            if (context.currentGear > 1 && context.clutch > 0.4f)
+            {
+                context.currentGear--;
+                shiftCooldown = 0.25f;
+            }
+            else if (context.currentGear == 1)
+            {
+                context.currentGear = 0;
+                shiftCooldown = 0.2f;
+            }
         }
 
         context.input.ConsumeShifts();
     }
-
     // ==============================
     // RPM SIMULATION (Mechanical)
     // ==============================
@@ -168,10 +201,17 @@ public class DrivingState : VehicleState
             redlineResistance *
             efficiency;
 
+        float gearRatio = GetGearRatio();
+
+        // smoother gear personality
+        float gearBoost = Mathf.Lerp(1.2f, 0.85f, context.currentGear / 5f);
+
+        // low gears = punchy, high gears = smoother
         float driveTorque =
             engineTorque *
-            GetGearRatio() *
-            context.finalDriveRatio;
+            gearRatio *
+            context.finalDriveRatio *
+            gearBoost;
 
         SetDriveTorque(driveTorque);
 
@@ -235,16 +275,35 @@ public class DrivingState : VehicleState
         float speed = context.rb.velocity.magnitude;
         float speedFactor = Mathf.Clamp01(speed / context.maxSpeed);
 
+        // ---------------- SPEED BASED STEERING ----------------
         float reducedAngle =
             Mathf.Lerp(context.maxSteerAngle,
-                       context.maxSteerAngle * 0.5f,
+                       context.maxSteerAngle * 0.35f,
                        speedFactor);
+
+        // ---------------- INPUT SMOOTHING ----------------
+        float targetSteer =
+            context.input.Steering * reducedAngle;
 
         float smoothSteer =
             Mathf.Lerp(
                 context.colliders.FLWheel.steerAngle,
-                context.input.Steering * reducedAngle,
+                targetSteer,
                 Time.fixedDeltaTime * context.steerResponse);
+
+        // ---------------- HIGH SPEED STABILITY ----------------
+        Vector3 velocityDir =
+            context.rb.velocity.sqrMagnitude > 1f
+            ? context.rb.velocity.normalized
+            : context.transform.forward;
+
+        float alignment =
+            Vector3.Dot(context.transform.forward, velocityDir);
+
+        float stabilityAssist =
+            Mathf.Clamp01(1f - alignment) * speedFactor;
+
+        smoothSteer *= (1f - stabilityAssist * 0.5f);
 
         context.colliders.FLWheel.steerAngle = smoothSteer;
         context.colliders.FRWheel.steerAngle = smoothSteer;

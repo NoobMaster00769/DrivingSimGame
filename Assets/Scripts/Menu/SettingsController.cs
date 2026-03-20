@@ -42,7 +42,8 @@ public class SettingsMenuController : MonoBehaviour
     void HandleNavigation()
     {
         if (timer < inputCooldown) return;
-        // 🔥 UNIVERSAL BACK
+
+        // 🔥 BACK
         if (Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
         {
@@ -53,6 +54,7 @@ public class SettingsMenuController : MonoBehaviour
         float horizontal = 0f;
         bool select = false;
 
+        // 🎮 Controller
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -61,7 +63,7 @@ public class SettingsMenuController : MonoBehaviour
                 select = true;
         }
 
-        // Keyboard
+        // ⌨️ Keyboard
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 

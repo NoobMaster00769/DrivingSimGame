@@ -74,10 +74,13 @@ public class CelestialMenuController : MonoBehaviour
         }
 
         // ⌨️ Keyboard
-        horizontal += input.Steering;
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (input.Brake > 0.5f)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
             select = true;
+
+        horizontal += input.Steering;
 
         if (horizontal > 0.6f) ChangeIndex(1);
         if (horizontal < -0.6f) ChangeIndex(-1);
