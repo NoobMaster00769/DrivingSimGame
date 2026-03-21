@@ -148,7 +148,7 @@ public class CelestialMenuController : MonoBehaviour
             StartGame();
 
         if (index == 1)
-            FindObjectOfType<MenuManager>().OpenMenu(6);
+           FindObjectOfType<DrivingTutorial>().StartTutorial();
 
         if (index == 2)
         {
@@ -160,7 +160,7 @@ public class CelestialMenuController : MonoBehaviour
         }
 
         if (index == 3)
-            FindObjectOfType<MenuManager>().OpenMenu(1);
+         FindObjectOfType<MenuManager>().OpenMenu(1);
     }
 
     void StartGame()

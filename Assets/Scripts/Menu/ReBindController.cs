@@ -22,7 +22,23 @@ public class ControllerRebindItem : MonoBehaviour
     InputActionRebindingExtensions.RebindingOperation currentOp; // 🔥 for ESC cancel
 
     // --------------------------------------------------
+    bool initialized = false;
 
+    public void EnsureInitialized(VehicleInputActions actions)
+    {
+        if (initialized) return;
+
+        var a = actions.FindAction(actionName);
+
+        if (a == null)
+        {
+            Debug.LogError($"Action NOT FOUND: {actionName}");
+            return;
+        }
+
+        Initialize(a);
+        initialized = true;
+    }
     public void Initialize(InputAction a)
     {
         action = a;
@@ -100,19 +116,20 @@ public class ControllerRebindItem : MonoBehaviour
                 if (!b.isPartOfComposite) continue;
                 if (!string.Equals(b.name, compositePartName, StringComparison.OrdinalIgnoreCase)) continue;
             }
-            // ✅ NON-COMPOSITE CASE
             else
             {
                 if (b.isComposite || b.isPartOfComposite) continue;
             }
 
             string path = b.effectivePath;
-
             if (string.IsNullOrEmpty(path))
                 path = b.path;
 
-            if (!string.IsNullOrEmpty(path) &&
-                path.ToLower().Contains("gamepad"))
+            if (string.IsNullOrEmpty(path))
+                continue;
+
+            // 🔥 FIX: detect ANY controller binding
+            if (path.Contains("Gamepad") || path.Contains("XInput") || path.Contains("DualShock"))
             {
                 return i;
             }
