@@ -29,11 +29,13 @@ public class GameStateController : MonoBehaviour
         {
             case GameState.Driving:
                 Time.timeScale = 1f;
+                CursorManager.LockCursor();
                 break;
 
             case GameState.Paused:
             case GameState.StartMenu:
                 Time.timeScale = 0f;
+                CursorManager.LockCursor();
                 break;
         }
 
