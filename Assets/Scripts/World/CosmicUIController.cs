@@ -289,7 +289,7 @@ public class CosmicUIController : MonoBehaviour
             Vector3.up * skyHeight;
 
         // 🔥 SMALL HORIZONTAL OFFSET (FIX DRIFT)
-        float horizontalOffset = 40f; // tweak 50–120
+        float horizontalOffset = -20; // tweak 50–120
 
         Vector3 targetPos =
             basePos + right * horizontalOffset;

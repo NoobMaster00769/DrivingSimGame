@@ -38,9 +38,9 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float starLengthBleed = 1.1f;
 
     [Header("FX Enhancement")]
-    public float fxBrightnessMultiplier = 1.6f;
-    public float fxEmissionMultiplier = 2.0f;
-    public float skyTintBlend = 0.55f;
+    public float fxBrightnessMultiplier = 1.8f;
+    public float fxEmissionMultiplier = 2.2f;
+    public float skyTintBlend = 0.65f;
 
     [Header("Boundary FX")]
     public GameObject boundaryParticlePrefab;
@@ -53,7 +53,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float colliderWidthPadding = 0.4f;
 
     [Header("Path Variation")]
-    public bool enableBranching = true;
+    public bool enableBranching = false;
 
     [Range(0f, 1f)] public float branchChance = 0.12f;
     public float branchStrength = 0.6f;
@@ -196,11 +196,15 @@ public class LevelLayoutGenerator : MonoBehaviour
         smoothCurvature += microNoise;
 
         float macroWave =
-    Mathf.Sin(Time.time * 0.2f) * 0.2f;
+    Mathf.Sin(Time.time * 0.15f) * 0.15f;
 
         smoothCurvature += macroWave;
 
+
         float targetTurn = smoothCurvature * yawStrength;
+
+        // 🔒 prevent extreme turns
+        targetTurn = Mathf.Clamp(targetTurn, -35f, 35f);
 
         // spring-like turn momentum (no energy loss)
         turnMomentum += (targetTurn - turnMomentum) * 0.45f;
@@ -209,6 +213,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         turnMomentum *= 1.02f;
 
         accumulatedYaw += turnMomentum;
+        accumulatedYaw = Mathf.Clamp(accumulatedYaw, -90f, 90f);
 
         float lateralShift =
     Mathf.Sin(roadCenters.Count * 0.2f) * 0.5f;
@@ -626,7 +631,10 @@ public class LevelLayoutGenerator : MonoBehaviour
 
             float influence = branchDirection * branchStrength * envelope;
 
-            roadState.curvature += influence * Time.deltaTime;
+            float branchOffset = branchDirection * branchStrength * envelope;
+
+            // apply TEMPORARILY instead of modifying base curvature
+            smoothCurvature += branchOffset * 0.5f;
             roadState.curvature = Mathf.Clamp(roadState.curvature, -1f, 1f);
 
             if (branchTimer <= 0f)

@@ -270,26 +270,46 @@ public class DrivingState : VehicleState
     // STEERING
     // ==============================
 
+    float currentSteer;
+    float steerVelocity; // smooth damp velocity
+
     void ApplySteering()
     {
         float speed = context.rb.velocity.magnitude;
         float speedFactor = Mathf.Clamp01(speed / context.maxSpeed);
 
         // ---------------- SPEED BASED STEERING ----------------
-        float reducedAngle =
+        float maxAngle =
             Mathf.Lerp(context.maxSteerAngle,
-                       context.maxSteerAngle * 0.35f,
+                       context.maxSteerAngle * 0.3f,
                        speedFactor);
 
-        // ---------------- INPUT SMOOTHING ----------------
-        float targetSteer =
-            context.input.Steering * reducedAngle;
+        float input = context.input.Steering;
 
-        float smoothSteer =
-            Mathf.Lerp(
-                context.colliders.FLWheel.steerAngle,
-                targetSteer,
-                Time.fixedDeltaTime * context.steerResponse);
+        // ---------------- NON-LINEAR INPUT (precision) ----------------
+        float curvedInput = Mathf.Sign(input) * input * input; // smoother near center
+
+        float targetSteer = curvedInput * maxAngle;
+
+        // ---------------- SELF CENTERING (SPRING SYSTEM) ----------------
+        float smoothTime =
+            Mathf.Lerp(0.12f, 0.05f, speedFactor); // faster response at high speed
+
+        if (Mathf.Abs(input) < 0.05f)
+        {
+            // return to center faster when no input
+            smoothTime *= 1.5f;
+            targetSteer = 0f;
+        }
+
+        currentSteer = Mathf.SmoothDamp(
+            currentSteer,
+            targetSteer,
+            ref steerVelocity,
+            smoothTime,
+            Mathf.Infinity,
+            Time.fixedDeltaTime
+        );
 
         // ---------------- HIGH SPEED STABILITY ----------------
         Vector3 velocityDir =
@@ -300,13 +320,23 @@ public class DrivingState : VehicleState
         float alignment =
             Vector3.Dot(context.transform.forward, velocityDir);
 
-        float stabilityAssist =
-            Mathf.Clamp01(1f - alignment) * speedFactor;
+        float slip = Mathf.Clamp01(1f - alignment);
 
-        smoothSteer *= (1f - stabilityAssist * 0.5f);
+        // reduce steering if sliding
+        currentSteer *= (1f - slip * speedFactor * 0.6f);
 
-        context.colliders.FLWheel.steerAngle = smoothSteer;
-        context.colliders.FRWheel.steerAngle = smoothSteer;
+        // ---------------- LIGHT COUNTER-STEER ASSIST ----------------
+        if (speed > 5f)
+        {
+            float cross =
+                Vector3.Cross(context.transform.forward, velocityDir).y;
+
+            currentSteer += cross * 2f * speedFactor;
+        }
+
+        // ---------------- APPLY ----------------
+        context.colliders.FLWheel.steerAngle = currentSteer;
+        context.colliders.FRWheel.steerAngle = currentSteer;
     }
 
     void ApplyBrakes()
