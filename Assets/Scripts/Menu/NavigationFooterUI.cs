@@ -12,6 +12,9 @@ public class NavigationFooterUI : MonoBehaviour
     enum ControllerType { Xbox, PlayStation, Generic }
     ControllerType controllerType;
 
+    public Camera menuCamera;
+    public Vector3 screenOffset = new Vector3(-0.9f, 0.85f, 6f);
+
     [Header("Keyboard Layouts")]
     public string horizontalKeyboard = "A/D Navigate   SPACE Select   ESC Back";
     public string verticalKeyboard = "W/S Navigate   SPACE Select   ESC Back";
@@ -33,7 +36,25 @@ public class NavigationFooterUI : MonoBehaviour
     }
 
     public MenuType currentMenuType;
+    void LateUpdate()
+    {
+        if (menuCamera == null) return;
 
+        Vector3 forward = menuCamera.transform.forward;
+        Vector3 right = menuCamera.transform.right;
+        Vector3 up = menuCamera.transform.up;
+
+        float dist = screenOffset.z;
+
+        transform.position =
+            menuCamera.transform.position +
+            forward * dist +
+            right * screenOffset.x * dist +
+            up * screenOffset.y * dist;
+
+        transform.rotation =
+            Quaternion.LookRotation(transform.position - menuCamera.transform.position);
+    }
     void Update()
     {
         DetectInputMode();

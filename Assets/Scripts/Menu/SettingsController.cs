@@ -165,7 +165,7 @@ public class SettingsMenuController : MonoBehaviour
         {
             if (state == GameState.Paused)
             {
-                FindObjectOfType<MenuManager>().OpenMenu(7); // back to pause
+                FindObjectOfType<MenuManager>().OpenMenu(6); // back to pause
             }
             else
             {

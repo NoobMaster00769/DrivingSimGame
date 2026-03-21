@@ -277,17 +277,29 @@ public class CosmicUIController : MonoBehaviour
     // ==================================================
     void AnchorToSky()
     {
-        Vector3 targetPos =
-            mainCamera.transform.position +
-            mainCamera.transform.forward * skyDistance +
+        Vector3 camPos = mainCamera.transform.position;
+
+        Vector3 forward = mainCamera.transform.forward;
+        Vector3 right = mainCamera.transform.right;
+
+        // 🔥 ORIGINAL POSITION (KEEP THIS)
+        Vector3 basePos =
+            camPos +
+            forward * skyDistance +
             Vector3.up * skyHeight;
+
+        // 🔥 SMALL HORIZONTAL OFFSET (FIX DRIFT)
+        float horizontalOffset = 40f; // tweak 50–120
+
+        Vector3 targetPos =
+            basePos + right * horizontalOffset;
 
         transform.position =
             Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 2f);
 
         transform.rotation =
             Quaternion.LookRotation(
-                transform.position - mainCamera.transform.position
+                transform.position - camPos
             );
     }
 

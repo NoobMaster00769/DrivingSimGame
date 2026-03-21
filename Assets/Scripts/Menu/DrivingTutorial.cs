@@ -272,11 +272,23 @@ Press any key");
 
     // ---------------- STEPS ----------------
 
+    const float MAX_STEP_TIME = 15f; // auto progress safety
+
+    // ---------------- STEP HELPERS ----------------
+
+    bool Timeout() => stepTime > MAX_STEP_TIME;
+
+    // ---------------- STEPS ----------------
+
     void EngageDrive()
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (context.currentGear == 1 && playerRB.velocity.magnitude > 3f)
+        bool gearOK = context.currentGear >= 1;
+        bool moving = playerRB.velocity.magnitude > 2f;
+        bool throttle = input.Throttle > 0.2f;
+
+        if ((gearOK && moving) || (throttle && moving) || Timeout())
             Next();
     }
 
@@ -284,7 +296,7 @@ Press any key");
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (Mathf.Abs(input.Steering) > 0.5f)
+        if (Mathf.Abs(input.Steering) > 0.3f || Timeout())
             Next();
     }
 
@@ -292,23 +304,29 @@ Press any key");
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (input.ShiftUp)
+        if (input.ShiftUp || context.currentGear > 1 || Timeout())
+        {
+            input.ConsumeShifts();
             Next();
+        }
     }
 
     void Downshift()
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (input.ShiftDown)
+        if (input.ShiftDown || context.currentGear < 2 || Timeout())
+        {
+            input.ConsumeShifts();
             Next();
+        }
     }
 
     void ReverseOrSlow()
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (input.Throttle < -0.3f)
+        if (input.Throttle < -0.2f || Timeout())
             Next();
     }
 
@@ -316,7 +334,10 @@ Press any key");
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (playerRB.velocity.magnitude < startSpeed - 2f)
+        bool slowed = playerRB.velocity.magnitude < startSpeed - 1f;
+        bool braking = input.Brake > 0.2f;
+
+        if (slowed || braking || Timeout())
             Next();
     }
 
@@ -324,8 +345,11 @@ Press any key");
     {
         if (stepTime < MIN_STEP_TIME) return;
 
-        if (input.ResetCar)
+        if (input.ResetCar || playerRB.velocity.magnitude < 0.5f || Timeout())
+        {
+            input.ConsumeReset();
             Next();
+        }
     }
 
     void CosmicUIExplain()
