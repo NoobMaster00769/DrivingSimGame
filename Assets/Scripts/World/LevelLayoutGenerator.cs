@@ -38,8 +38,8 @@ public class LevelLayoutGenerator : MonoBehaviour
     public float starLengthBleed = 1.1f;
 
     [Header("FX Enhancement")]
-    public float fxBrightnessMultiplier = 1.8f;
-    public float fxEmissionMultiplier = 2.2f;
+    public float fxBrightnessMultiplier = 1.95f;
+    public float fxEmissionMultiplier = 2.4f;
     public float skyTintBlend = 0.65f;
 
     [Header("Boundary FX")]
