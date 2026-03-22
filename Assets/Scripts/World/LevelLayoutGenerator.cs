@@ -79,6 +79,8 @@ public class LevelLayoutGenerator : MonoBehaviour
 
     List<GameObject> roadChunks = new();
     List<Vector3> roadCenters = new();
+    Queue<Vector3> forwardHistory = new Queue<Vector3>();
+    int historySize = 4;
 
     void Start()
     {
@@ -136,14 +138,43 @@ public class LevelLayoutGenerator : MonoBehaviour
         Cleanup();
     }
 
+    Vector3 SmoothForward()
+    {
+        if (forwardHistory.Count < 4)
+            return currentForward;
+
+        var arr = forwardHistory.ToArray();
+
+        Vector3 p0 = arr[0];
+        Vector3 p1 = arr[1];
+        Vector3 p2 = arr[2];
+        Vector3 p3 = arr[3];
+
+        float t = 0.5f;
+
+        Vector3 result =
+            0.5f * (
+                (2f * p1) +
+                (-p0 + p2) * t +
+                (2f * p0 - 5f * p1 + 4f * p2 - p3) * t * t +
+                (-p0 + 3f * p1 - 3f * p2 + p3) * t * t * t
+            );
+
+        return result.normalized;
+    }
+
     void SpawnNextChunk()
     {
         Vector3 targetForward =
             Quaternion.Euler(0f, accumulatedYaw, 0f) *
             Vector3.forward;
 
-        currentForward =
-            Vector3.Slerp(currentForward, targetForward, 0.65f);
+        forwardHistory.Enqueue(targetForward);
+
+        if (forwardHistory.Count > historySize)
+            forwardHistory.Dequeue();
+
+        currentForward = SmoothForward();
 
         Quaternion roadRotation =
             Quaternion.LookRotation(currentForward, Vector3.up);
@@ -210,7 +241,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         turnMomentum += (targetTurn - turnMomentum) * 0.45f;
 
         // tiny overshoot = natural motion
-        turnMomentum *= 1.02f;
+        turnMomentum *= 1.0f;
 
         accumulatedYaw += turnMomentum;
         accumulatedYaw = Mathf.Clamp(accumulatedYaw, -90f, 90f);
