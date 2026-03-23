@@ -80,7 +80,7 @@ public class AudioMenuController : MonoBehaviour
         if (Keyboard.current.wKey.isPressed) vertical += 1f;
         if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)
             select = true;
 
         if (horizontal > 0.6f) ChangeIndex(1);

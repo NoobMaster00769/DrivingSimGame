@@ -74,7 +74,7 @@ public class BindingListMenuController : MonoBehaviour
         if (Keyboard.current.wKey.isPressed) vertical += 1f;
         if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)
             select = true;
 
         if (vertical > 0.5f) ChangeIndex(-1);

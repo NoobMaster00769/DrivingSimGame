@@ -58,7 +58,7 @@ public class VehicleContext : MonoBehaviour
 
     // ---------------- BRAKES ----------------
     [Header("Brakes")]
-    public float brakeForce = 2600f;
+    public float brakeForce = 4200f;
 
     // ---------------- FRICTION ----------------
     [Header("Friction")]
@@ -67,13 +67,13 @@ public class VehicleContext : MonoBehaviour
 
     // ---------------- SPEED ----------------
     [Header("Speed")]
-    public float maxSpeed = 42f;
+    public float maxSpeed = 85f;
 
     [HideInInspector] public float engineRPM;
     [HideInInspector] public bool engineStalled;
 
     [Header("Gear Behavior")]
-    public float minSpeedForGearFactor = 4f;   // tuning knob
+    public float minSpeedForGearFactor = 8f;   // tuning knob
     public float luggingPenalty = 0.15f;       // how dead high gear feels at low speed
     public float overRevPenalty = 0.5f;        // penalty at too high RPM
 

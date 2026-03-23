@@ -5,9 +5,8 @@ public class CarFollowCamera : MonoBehaviour
 {
     public Transform target;
 
-    [Header("Speed FOV")]
-    public float baseFOV = 55f;
-    public float speedFOV = 6f;
+    [Header("FOV")]
+    public float baseFOV = 65f;   // slightly wider base — more road visible
     public float fovSmooth = 2f;
 
     [Header("Void Effect")]
@@ -17,200 +16,154 @@ public class CarFollowCamera : MonoBehaviour
     float voidBlend = 0f;
 
     [Header("Framing")]
-    public Vector3 baseOffset = new Vector3(0f, 7f, -11f);
+    public Vector3 baseOffset = new Vector3(0f, 5.5f, -10f);
 
     [Header("Follow")]
-    public float positionSmooth = 3.5f;
-    public float rotationSmooth = 3.2f;
+    // Lower = camera has more inertia / cinematic lag
+    // Higher = glues to car
+    // 8–10 gives a loose, weighty follow without losing the car
+    public float positionSmooth = 9f;
+    public float rotationSmooth = 5f;
+
+    [Header("Speed Offset")]
+    public float speedPushBack = 3f;    // how far camera pulls back at max speed
+    public float speedLift = 0.8f;
 
     [Header("Look Ahead")]
-    public float lookAheadDistance = 26f;
-    public float lookAheadSmooth = 3f;
+    public float lookAheadDistance = 14f;
+    public float lookAheadSmooth = 2.5f;  // higher = smoother anticipation
 
     [Header("Turn Banking")]
-    public float bankAmount = 8f;
-    public float bankSmooth = 3f;
+    public float bankAmount = 5f;           // now actually used (was hardcoded to 5)
 
-    [Header("Breathing Motion")]
+    [Header("Motion")]
     public float breathAmount = 0.35f;
-    public float breathSpeed = 0.35f;
-
-    [Header("Cosmic Drift")]
+    public float breathSpeed = 0.1f;
     public float driftAmount = 0.25f;
     public float driftSpeed = 0.12f;
-
-    [Header("Suspension Motion")]
     public float suspensionAmount = 0.18f;
     public float suspensionSpeed = 6f;
 
     [Header("Turn Anticipation")]
-    public float anticipationAmount = 3f;
+    public float anticipationAmount = 4f;
 
-    [Header("Forward Bias")]
-    public float forwardBiasStrength = 2.5f;
-
-    [Header("Look Resistance")]
-    public float maxLookAngle = 70f;   // where resistance becomes strong
-    public float resistanceStrength = 4f;
-
-    float suspensionTimer;
-
+    // ── Internal ─────────────────────────────────────────────────
     Camera cam;
     Rigidbody rb;
 
-    Vector3 velocity;
+    Vector3 smoothVelocity;          // SmoothDamp velocity for position
     Vector3 smoothLookDir;
-
     float breathTimer;
     float driftTimer;
+    float suspensionTimer;
+
+    // Cinematic lean — camera tilts INTO curves slightly (not banking, tilting)
+    float leanAngle;
+    float leanVelocity;
+
+    // Soft velocity tracking — lags behind actual velocity for cinematic weight
+    Vector3 softVelocityDir;
 
     void Start()
     {
         cam = GetComponent<Camera>();
-
-        if (target)
-            rb = target.GetComponent<Rigidbody>();
-
-        smoothLookDir = target.forward;
-
-        cam.fieldOfView = 55f;
+        if (target) rb = target.GetComponent<Rigidbody>();
+        smoothLookDir = target ? target.forward : Vector3.forward;
+        softVelocityDir = smoothLookDir;
+        cam.fieldOfView = baseFOV;
     }
 
     void LateUpdate()
     {
         if (!target) return;
 
-        breathTimer += Time.deltaTime * breathSpeed;
-        driftTimer += Time.deltaTime * driftSpeed;
-
-        //---------------------------------
-        // FOLLOW POSITION
-        //---------------------------------
-
-        Vector3 desiredPosition = target.TransformPoint(baseOffset);
-
-        float breath = Mathf.Sin(breathTimer) * breathAmount;
-        desiredPosition += target.forward * breath;
-
         float speed = rb ? rb.velocity.magnitude : 0f;
+        // Use actual meaningful max (28 m/s from inspector) not the code default
+        float speed01 = Mathf.Clamp01(speed / 28f);
 
-        float targetFOV =
-            baseFOV + Mathf.Clamp(speed * 0.15f, 0f, speedFOV);
-
-        float targetVoid = LevelLayoutGenerator.isInVoid ? 1f : 0f;
-
-        voidBlend = Mathf.Lerp(voidBlend, targetVoid, Time.deltaTime * 2f);
-
-        float finalFOV = Mathf.Lerp(targetFOV, voidFOV, voidBlend);
-
-        cam.fieldOfView = Mathf.Lerp(
-            cam.fieldOfView,
-            finalFOV,
-            Time.deltaTime * voidFOVSpeed
-        );
-
-        if (voidBlend > 0.01f)
-        {
-            desiredPosition += Vector3.down * voidBlend * 2.5f;
-        }
-
-        Vector3 forwardDrop =
-            transform.forward * -voidBlend * 2f;
-
-        desiredPosition += forwardDrop;
-
-        suspensionTimer += Time.deltaTime * suspensionSpeed;
-
-        float suspension =
-            Mathf.Sin(suspensionTimer) * suspensionAmount;
-
-        desiredPosition += target.up * suspension;
-
-        float baseShake =
-            Mathf.PerlinNoise(Time.time * 6f, 0f) *
-            Mathf.Clamp01(speed * 0.02f) * 0.2f;
-
-        float voidExtra =
-            voidBlend * voidShake * 1.5f;
-
-        float shake = baseShake + voidExtra;
-
-        desiredPosition += target.up * shake;
-
-        float drift = Mathf.Sin(driftTimer) * driftAmount;
-        desiredPosition += target.right * drift;
-
-        transform.position = Vector3.SmoothDamp(
-            transform.position,
-            desiredPosition,
-            ref velocity,
-            1f / positionSmooth
-        );
-
-        //---------------------------------
-        // LOOK AHEAD (SOFT RESISTANCE)
-        //---------------------------------
-
-        Vector3 velocityDir =
-            rb && rb.velocity.sqrMagnitude > 0.5f
+        // ── Velocity direction (soft — lags 0.3 s behind real velocity) ──
+        Vector3 realVelDir = rb && rb.velocity.sqrMagnitude > 0.5f
             ? rb.velocity.normalized
             : target.forward;
 
-        float angle = Vector3.Angle(target.forward, velocityDir);
+        softVelocityDir = Vector3.Lerp(
+            softVelocityDir,
+            realVelDir,
+            Time.deltaTime * 1.8f);
 
-        // 🔥 soft resistance curve
-        float resistance = Mathf.InverseLerp(maxLookAngle * 0.5f, maxLookAngle, angle);
-        resistance = Mathf.Pow(resistance, resistanceStrength);
+        // ── POSITION ─────────────────────────────────────────────
+        // Speed pushback and lift scale from 0 at rest to full at max speed.
+        // Because we use SmoothDamp the camera has genuine inertia — it takes
+        // ~0.2 s to catch a sudden move, giving a cinematic "weight" that
+        // positionSmooth alone can't achieve.
+        Vector3 offset = baseOffset;
+        offset.z -= speedPushBack * speed01;          // pull back at speed
+        offset.y += speedLift * speed01 * 0.5f;   // lift gently
 
-        Vector3 forwardDir =
-            Vector3.Slerp(velocityDir, target.forward, resistance);
+        Vector3 desired = target.TransformPoint(offset);
 
+        float smoothTime = Mathf.Lerp(0.12f, 0.06f, speed01); // looser at rest
+        transform.position = Vector3.SmoothDamp(
+            transform.position,
+            desired,
+            ref smoothVelocity,
+            smoothTime,
+            Mathf.Infinity,
+            Time.deltaTime);
+
+        // ── FOV ──────────────────────────────────────────────────
+        // Void effect overrides everything
+        bool inVoid = LevelLayoutGenerator.isInVoid;
+        voidBlend = Mathf.Lerp(voidBlend, inVoid ? 1f : 0f, Time.deltaTime * voidFOVSpeed);
+
+        // FOV breathes gently with speed — 10 degrees total swing.
+        // This is ADDITIVE not multiplicative so it never feels like the world
+        // is zooming in/out — just a natural widening as you pick up speed.
+        float speedFOV = baseFOV + speed01 * 10f;
+        float targetFOV = Mathf.Lerp(speedFOV, voidFOV, voidBlend);
+
+        cam.fieldOfView = Mathf.Lerp(
+            cam.fieldOfView,
+            targetFOV,
+            Time.deltaTime * fovSmooth);
+
+        // ── LOOK AHEAD ───────────────────────────────────────────
+        // Smooth look direction follows soft velocity (not snappy real velocity).
+        // This means on a curve the camera pans ahead of the car slowly — feels
+        // like a real camera operator rather than a locked gimbal.
         smoothLookDir = Vector3.Lerp(
             smoothLookDir,
-            forwardDir,
-            Time.deltaTime * lookAheadSmooth
-        );
+            softVelocityDir,
+            Time.deltaTime * (lookAheadSmooth * 0.6f));
 
-        Vector3 turnOffset =
-            target.right * Vector3.Dot(target.right, smoothLookDir) * anticipationAmount;
+        // Look-ahead point: further at speed, closer at rest (more intimate)
+        float aheadDist = Mathf.Lerp(lookAheadDistance * 0.6f, lookAheadDistance, speed01);
+        Vector3 lookPoint = target.position + smoothLookDir * aheadDist;
 
-        Vector3 lookPoint =
-            target.position +
-            smoothLookDir * lookAheadDistance +
-            turnOffset;
+        Quaternion targetRot = Quaternion.LookRotation(
+            lookPoint - transform.position,
+            Vector3.up);
 
-        Quaternion baseRotation =
-            Quaternion.LookRotation(
-                lookPoint - transform.position,
-                Vector3.up
-            );
+        // ── BANKING (uses Inspector value now) ───────────────────
+        // Bank INTO the turn direction — feels like a camera on a boom arm.
+        float sideways = Vector3.Dot(target.right, softVelocityDir);
+        float targetLean = -sideways * bankAmount * speed01;  // zero at rest
+        leanAngle = Mathf.SmoothDamp(leanAngle, targetLean, ref leanVelocity, 0.2f);
 
-        //---------------------------------
-        // CAMERA BANKING
-        //---------------------------------
+        Quaternion bankRot = Quaternion.AngleAxis(leanAngle, Vector3.forward);
 
-        float sideways =
-            Vector3.Dot(target.right, smoothLookDir);
-
-        float bank =
-            Mathf.Clamp(-sideways * bankAmount, -bankAmount, bankAmount);
-
-        float turnImpact =
-            Mathf.Abs(sideways) * 1.5f;
-
-        desiredPosition += target.right * turnImpact;
-
-        Quaternion bankRot =
-            Quaternion.AngleAxis(bank, Vector3.forward);
-
-        //---------------------------------
-        // APPLY ROTATION
-        //---------------------------------
+        float rotSmooth = Mathf.Lerp(3f, rotationSmooth, speed01);
 
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
-            baseRotation * bankRot,
-            Time.deltaTime * (rotationSmooth * 0.9f)
-        );
+            targetRot * bankRot,
+            Time.deltaTime * rotSmooth);
+
+        // ── VOID SHAKE ───────────────────────────────────────────
+        if (voidBlend > 0.05f)
+        {
+            float shake = Mathf.PerlinNoise(Time.time * 8f, 0f) - 0.5f;
+            transform.position += transform.right * shake * voidShake * voidBlend;
+        }
     }
 }

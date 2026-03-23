@@ -70,7 +70,7 @@ public class PauseMenuController : MonoBehaviour
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)
             select = true;
 
         // Steering fallback

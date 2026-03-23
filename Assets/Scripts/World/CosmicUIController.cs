@@ -128,14 +128,42 @@ public class CosmicUIController : MonoBehaviour
 
         float rpmNorm = vehicle.engineRPM / vehicle.maxRPM;
 
-        bool up =
-            rpmNorm > 0.85f &&
-            vehicle.currentGear > 0 &&
-            vehicle.currentGear < vehicle.forwardGearRatios.Length;
+        float speed = vehicle.rb.velocity.magnitude;
 
-        bool down =
-            rpmNorm < 0.25f &&
-            vehicle.currentGear > 1;
+        // 🔥 SAME thresholds as DrivingState (IMPORTANT)
+        float[] gearMinSpeed = {
+    0f,   // neutral
+    0f,   // 1st
+    7f,   // 2nd
+    14f,  // 3rd
+    22f,  // 4th
+    30f   // 5th
+};
+
+        bool up = false;
+        bool down = false;
+
+        // ---------------- UPSHIFT ----------------
+        if (vehicle.currentGear > 0 &&
+            vehicle.currentGear < vehicle.forwardGearRatios.Length)
+        {
+            int nextGear = vehicle.currentGear + 1;
+
+            if (speed > gearMinSpeed[nextGear] &&
+                rpmNorm > 0.75f) // softer than before
+            {
+                up = true;
+            }
+        }
+
+        // ---------------- DOWNSHIFT ----------------
+        if (vehicle.currentGear > 1)
+        {
+            if (speed < gearMinSpeed[vehicle.currentGear] + 1.5f)
+            {
+                down = true;
+            }
+        }
 
         // PRIORITY SYSTEM
         if (wrong)

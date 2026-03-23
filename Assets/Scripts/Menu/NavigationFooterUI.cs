@@ -16,10 +16,10 @@ public class NavigationFooterUI : MonoBehaviour
     public Vector3 screenOffset = new Vector3(-0.9f, 0.85f, 6f);
 
     [Header("Keyboard Layouts")]
-    public string horizontalKeyboard = "A/D Navigate   SPACE Select   ESC Back";
-    public string verticalKeyboard = "W/S Navigate   SPACE Select   ESC Back";
-    public string sliderKeyboard = "A/D Select   W/S Adjust   SPACE Select   ESC Back";
-    public string pauseKeyboard = "A/D Navigate   SPACE Select   ESC Resume";
+    public string horizontalKeyboard = "A/D Navigate   SPACE / ENTER Select   ESC Back";
+    public string verticalKeyboard = "W/S Navigate   SPACE / ENTER Select   ESC Back";
+    public string sliderKeyboard = "A/D Select   W/S Adjust   SPACE / ENTER Select   ESC Back";
+    public string pauseKeyboard = "A/D Navigate   SPACE / ENTER Select   ESC Resume";
 
     [Header("Controller Layouts (Dynamic)")]
     string horizontalController;
