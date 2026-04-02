@@ -16,10 +16,10 @@ public class NavigationFooterUI : MonoBehaviour
     public Vector3 screenOffset = new Vector3(-0.9f, 0.85f, 6f);
 
     [Header("Keyboard Layouts")]
-    public string horizontalKeyboard = "A/D Navigate   SPACE / ENTER Select   ESC Back";
-    public string verticalKeyboard = "W/S Navigate   SPACE / ENTER Select   ESC Back";
-    public string sliderKeyboard = "A/D Select   W/S Adjust   SPACE / ENTER Select   ESC Back";
-    public string pauseKeyboard = "A/D Navigate   SPACE / ENTER Select   ESC Resume";
+    string horizontalKeyboard = "A/D Navigate\nSPACE / ENTER Select\nESC Back";
+    string verticalKeyboard = "W/S Navigate\nSPACE / ENTER Select\nESC Back";
+    string sliderKeyboard = "A/D Select\nW/S Adjust\nSPACE / ENTER Select\nESC Back";
+    string pauseKeyboard = "A/D Navigate\nSPACE / ENTER Select\nESC Resume";
 
     [Header("Controller Layouts (Dynamic)")]
     string horizontalController;
@@ -139,10 +139,10 @@ public class NavigationFooterUI : MonoBehaviour
                 break;
         }
 
-        horizontalController = $"LS Navigate   {select} Select   {back} Back";
-        verticalController = $"LS Navigate   {select} Select   {back} Back";
-        sliderController = $"LS Navigate   {select} Select   {back} Back";
-        pauseController = $"LS Navigate   {select} Select   {pause} Resume";
+        horizontalController = $"LS Navigate\n{select} Select\n{back} Back";
+        verticalController = $"LS Navigate\n{select} Select\n{back} Back";
+        sliderController = $"LS Navigate\n{select} Select\n{back} Back";
+        pauseController = $"LS Navigate\n{select} Select\n{pause} Resume";
     }
 
     // ==================================================

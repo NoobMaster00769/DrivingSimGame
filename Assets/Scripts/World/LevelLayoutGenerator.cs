@@ -378,7 +378,9 @@ public class LevelLayoutGenerator : MonoBehaviour
 
             // LEFT
             var lgo = Instantiate(boundaryParticlePrefab, root.transform);
-            lgo.transform.localPosition = new Vector3(-wallX, wallColY, 0f);
+            lgo.transform.localPosition = new Vector3(-(wallX + boundaryColliderThickness * 1f), wallColY, 0f);
+
+
 
             var lCol = lgo.AddComponent<BoxCollider>();
             lCol.size = new Vector3(boundaryColliderThickness, boundaryHeight, wallLenZ);
@@ -393,7 +395,7 @@ public class LevelLayoutGenerator : MonoBehaviour
 
             // RIGHT
             var rgo = Instantiate(boundaryParticlePrefab, root.transform);
-            rgo.transform.localPosition = new Vector3(wallX, wallColY, 0f);
+            rgo.transform.localPosition = new Vector3(wallX + boundaryColliderThickness * 1f, wallColY, 0f);
 
             var rCol = rgo.AddComponent<BoxCollider>();
             rCol.size = new Vector3(boundaryColliderThickness, boundaryHeight, wallLenZ);

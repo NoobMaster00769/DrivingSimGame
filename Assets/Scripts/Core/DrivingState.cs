@@ -55,7 +55,6 @@ public class DrivingState : VehicleState
     void HandleGearShift()
     {
         float speed = context.rb.velocity.magnitude;
-
         bool shiftUp = context.input.ShiftUp;
         bool shiftDown = context.input.ShiftDown;
 
@@ -66,18 +65,16 @@ public class DrivingState : VehicleState
             return;
         }
 
-        // Min speed thresholds scaled to actual maxSpeed (28 m/s) not the old 85
-        // These feel natural — you can get into 3rd at city speeds
+        // Rescaled to maxSpeed=50
         float[] gearMinSpeed = {
-    0f,   // neutral
-    0f,   // 1st
-    7f,   // 2nd
-    14f,  // 3rd
-    22f,  // 4th
-    30f   // 5th
-};
+        0f,    // neutral
+        0f,    // 1st
+        10f,   // 2nd  (was 8)
+        20f,   // 3rd  (was 16)
+        32f,   // 4th  (was 26)
+        42f,   // 5th  (was 34)
+    };
 
-        // SHIFT UP
         if (shiftUp)
         {
             if (context.currentGear == 0)
@@ -99,12 +96,11 @@ public class DrivingState : VehicleState
             }
         }
 
-        // SHIFT DOWN
         if (shiftDown)
         {
             if (context.currentGear > 1)
             {
-                if (speed < gearMinSpeed[context.currentGear])
+                if (speed < gearMinSpeed[context.currentGear] + 2f)
                 {
                     context.currentGear--;
                     shiftCooldown = 0.25f;
@@ -151,6 +147,20 @@ public class DrivingState : VehicleState
         if (context.currentGear == 0)
         {
             SetDriveTorque(0f);
+            context.engineRPM = Mathf.Lerp(
+                context.engineRPM,
+                context.idleRPM + context.input.Throttle * (context.maxRPM - context.idleRPM),
+                Time.fixedDeltaTime * 6f);
+            return;
+        }
+
+        if (context.clutch > 0.5f)
+        {
+            SetDriveTorque(0f);
+            context.engineRPM = Mathf.Lerp(
+                context.engineRPM,
+                context.idleRPM + context.input.Throttle * (context.maxRPM - context.idleRPM),
+                Time.fixedDeltaTime * 5f);
             return;
         }
 
@@ -166,43 +176,48 @@ public class DrivingState : VehicleState
         // Redline resistance
         float redlineResistance = 1f;
         if (rpmNorm > 0.92f)
+            redlineResistance = Mathf.Lerp(1f, 0f, (rpmNorm - 0.92f) / 0.08f);
+
+        // Lugging
+        float minSpeed = GetMinSpeedForGear(context.currentGear);
+        float efficiency = 1f;
+        if (speed < minSpeed)
         {
-            float over = (rpmNorm - 0.92f) / 0.08f;
-            redlineResistance = Mathf.Lerp(1f, 0f, over);
+            float t = speed / Mathf.Max(0.1f, minSpeed);
+            efficiency = Mathf.Lerp(0.45f, 1f, t * t);
         }
 
-        // Lugging — scaled to actual max speed so every gear is usable
-        // minSpeedForGear is now per-gear, not a linear factor
-        float minSpeedForGear = GetMinSpeedForGear(context.currentGear);
-        float efficiency = 1f;
-        if (speed < minSpeedForGear)
-        {
-            float t = speed / Mathf.Max(0.1f, minSpeedForGear);
-            efficiency = Mathf.Lerp(0.4f, 1f, t * t);
-        }
+        float curveFactor = context.torqueCurve != null
+            ? context.torqueCurve.Evaluate(rpmNorm)
+            : 1f;
 
         float engineTorque =
             context.maxMotorTorque *
             context.input.Throttle *
             redlineResistance *
-            efficiency;
+            efficiency *
+            curveFactor;
 
         float gearRatio = GetGearRatio();
-        float gearBoost = Mathf.Lerp(1.8f, 0.6f, (context.currentGear - 1f) / 4f);
 
-        float driveTorque =
-            engineTorque *
-            gearRatio *
-            context.finalDriveRatio *
-            gearBoost;
+        // Higher boost in top gears so 4th/5th can actually push the car
+        // to maxSpeed. Old 0.55 in 5th was too weak — raised to 0.85.
+        float gearBoost = Mathf.Lerp(1.6f, 0.85f, (context.currentGear - 1f) / 4f);
 
-        // High gear low speed penalty — but scaled to actual max, not 25
-        if (context.currentGear >= 4 && speed < context.maxSpeed * 0.6f)
-            driveTorque *= 0.5f;
+        float driveTorque = engineTorque * gearRatio * context.finalDriveRatio * gearBoost;
+
+        // Removed the high-gear low-speed penalty — it was cutting 4th gear
+        // torque in half exactly when you needed it to accelerate onto top speed.
 
         // Kickstart
         if (speed < 1.5f && context.input.Throttle > 0.2f)
-            driveTorque += 800f;
+            driveTorque += 600f;
+
+        // Speed cap — only starts at 97% of maxSpeed, fully kills at 102%.
+        // Old cap started at 92% which meant you hit a wall 3 m/s before top speed.
+        float speedCapFactor = 1f - Mathf.Clamp01(
+            (speed - context.maxSpeed * 0.97f) / (context.maxSpeed * 0.05f));
+        driveTorque *= speedCapFactor;
 
         SetDriveTorque(driveTorque);
 
@@ -210,16 +225,16 @@ public class DrivingState : VehicleState
             context.engineRPM -= 2000f * Time.fixedDeltaTime;
     }
 
-    // Per-gear minimum speed — fixed values that work within the 28 m/s cap
     float GetMinSpeedForGear(int gear)
     {
+        // Scaled to maxSpeed=40
         switch (gear)
         {
             case 1: return 0f;
-            case 2: return 5f;
-            case 3: return 11f;
-            case 4: return 18f;
-            case 5: return 26f;
+            case 2: return 8f;
+            case 3: return 17f;
+            case 4: return 27f;
+            case 5: return 38f;
             default: return 0f;
         }
     }
@@ -233,33 +248,17 @@ public class DrivingState : VehicleState
         if (context.currentGear <= 0) return;
         if (context.input.Throttle > 0.1f) return;
 
-        float brake =
-            context.brakeForce * 0.05f *
-            (context.engineRPM / context.maxRPM);
-
+        float brake = context.brakeForce * 0.04f * (context.engineRPM / context.maxRPM);
         context.colliders.RLWheel.brakeTorque += brake;
         context.colliders.RRWheel.brakeTorque += brake;
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  STEERING  — the core feel fix
-    //
-    //  Problems with the old system:
-    //  1. speed01 = speed / maxSpeed, but maxSpeed in context was 85 while
-    //     the car never exceeds 28 — so speed01 was always ~0.33, meaning
-    //     steering was always in "slow heavy" mode and never lightened up.
-    //  2. StabilizeLateralVelocity with stability=0.55 completely cancelled
-    //     the natural cornering arc — the car felt like it was on rails but
-    //     also somehow didn't turn properly.
-    //  3. No progressive feel — turning is the same whether you're crawling
-    //     or at full speed.
-    //
-    //  Fix:
-    //  - speed01 now uses actual max (28) so the full steering range is used
-    //  - Self-centering is stronger at speed (car stays composed on straights)
-    //  - Lateral resistance is gentler — lets the car arc naturally
-    //  - StabilizeLateralVelocity stability reduced from 0.55 → 0.25
-    //    so the car has genuine body roll feel through corners
+    //  STEERING
+    //  maxSteerAngle=20, steerResponse=2.5 from Inspector
+    //  The key fix: steer angle is small (20°) so response must be
+    //  snappier than a 40° system — but self-centering must also be
+    //  strong to prevent oscillation from tap inputs.
     // ══════════════════════════════════════════════════════════════
 
     float currentSteer;
@@ -272,37 +271,36 @@ public class DrivingState : VehicleState
 
         float input = context.input.Steering;
 
-        // steering range reduces at speed (real car feel)
         float maxAngle = Mathf.Lerp(
             context.maxSteerAngle,
-            context.maxSteerAngle * 0.5f,
+            context.maxSteerAngle * 0.65f,
             speed01);
 
-        float targetSteer = input * maxAngle;
+        // At high speed, build is very slow — full lock takes 2–3 seconds of
+        // sustained hold. This matches real cars where highway steering is
+        // extremely deliberate with tiny angle changes having big effect.
+        float buildRate = Mathf.Lerp(42f, 9f, speed01 * speed01);  // quadratic dropoff
+        float returnRate = Mathf.Lerp(80f, 160f, speed01);           // snappier return at speed
 
-        // slower response at speed → stable
-        float response = Mathf.Lerp(11f, 4f, speed01);
-
-        currentSteer = Mathf.Lerp(
-            currentSteer,
-            targetSteer,
-            Time.fixedDeltaTime * response);
-
-        // strong self-centering at speed
-        if (Mathf.Abs(input) < 0.05f)
+        if (Mathf.Abs(input) > 0.05f)
         {
-            float centerSpeed = Mathf.Lerp(4f, 10f, speed01);
-            currentSteer = Mathf.Lerp(currentSteer, 0f, Time.fixedDeltaTime * centerSpeed);
+            float targetSteer = input * maxAngle;
+            float delta = targetSteer - currentSteer;
+            float step = buildRate * Time.fixedDeltaTime;
+            currentSteer += Mathf.Clamp(delta, -step, step);
+        }
+        else
+        {
+            float step = returnRate * Time.fixedDeltaTime;
+            currentSteer = Mathf.MoveTowards(currentSteer, 0f, step);
         }
 
-        // resistance when sliding (adds weight feel)
-        float lateral = Vector3.Dot(context.rb.velocity, context.transform.right);
-        float resistance = Mathf.Clamp01(Mathf.Abs(lateral) / 10f);
-        currentSteer *= Mathf.Lerp(1f, 0.75f, resistance);
+        currentSteer = Mathf.Clamp(currentSteer, -maxAngle, maxAngle);
 
         context.colliders.FLWheel.steerAngle = currentSteer;
         context.colliders.FRWheel.steerAngle = currentSteer;
     }
+
     // ══════════════════════════════════════════════════════════════
     //  BRAKES
     // ══════════════════════════════════════════════════════════════
@@ -318,6 +316,7 @@ public class DrivingState : VehicleState
 
     // ══════════════════════════════════════════════════════════════
     //  FRICTION
+    //  rearSideFriction=1.9, rearHandbrakeFriction=0.7 from Inspector
     // ══════════════════════════════════════════════════════════════
 
     void ApplyFriction()
@@ -325,19 +324,20 @@ public class DrivingState : VehicleState
         float speed = context.rb.velocity.magnitude;
         float speed01 = Mathf.Clamp01(speed / context.maxSpeed);
 
-        // MUCH stronger grip
-        float frontGrip = Mathf.Lerp(1.7f, 2.3f, speed01);
-        float rearGrip = Mathf.Lerp(1.6f, 2.1f, speed01);
+        // Front: grippy enough to turn, not so much it fights lateral correction
+        float frontGrip = Mathf.Lerp(1.3f, 1.7f, speed01);
+        // Rear: use context value so Inspector tuning works
+        float rearGrip = context.rearSideFriction;
 
         ApplyWheelFriction(context.colliders.FLWheel, frontGrip);
         ApplyWheelFriction(context.colliders.FRWheel, frontGrip);
         ApplyWheelFriction(context.colliders.RLWheel, rearGrip);
         ApplyWheelFriction(context.colliders.RRWheel, rearGrip);
 
-        StabilizeLateralVelocity();
+        StabilizeLateralVelocity(speed01);
     }
 
-    void StabilizeLateralVelocity()
+    void StabilizeLateralVelocity(float speed01)
     {
         Vector3 velocity = context.rb.velocity;
         Vector3 forward = context.transform.forward;
@@ -346,10 +346,10 @@ public class DrivingState : VehicleState
         float forwardVel = Vector3.Dot(velocity, forward);
         float lateralVel = Vector3.Dot(velocity, right);
 
-        // 0.25 instead of 0.55 — car now arcs through corners properly.
-        // At 0.55 the lateral velocity was being cancelled so aggressively
-        // that turning felt numb even though the wheels were turning.
-        float stability = 0.32f;
+        // At low speed: softer (0.35) so the car can actually rotate into a turn.
+        // At high speed: firmer (0.62) so straight-line is composed and tap inputs
+        // don't snowball into oscillation.
+        float stability = Mathf.Lerp(0.35f, 0.62f, speed01);
 
         Vector3 corrected =
             forward * forwardVel +
@@ -358,16 +358,16 @@ public class DrivingState : VehicleState
         context.rb.velocity = Vector3.Lerp(
             context.rb.velocity,
             corrected,
-            Time.fixedDeltaTime * 3f);
+            Time.fixedDeltaTime * 5f);
     }
 
     void ApplyWheelFriction(WheelCollider wheel, float stiffness)
     {
         WheelFrictionCurve f = wheel.sidewaysFriction;
-        f.extremumSlip = 0.25f;
-        f.extremumValue = 1.2f;
-        f.asymptoteSlip = 0.5f;
-        f.asymptoteValue = 0.9f;
+        f.extremumSlip = 0.22f;
+        f.extremumValue = 1.1f;
+        f.asymptoteSlip = 0.45f;
+        f.asymptoteValue = 0.85f;
         f.stiffness = stiffness;
         wheel.sidewaysFriction = f;
     }
@@ -379,7 +379,7 @@ public class DrivingState : VehicleState
     void ApplyDownforce()
     {
         float speed = context.rb.velocity.magnitude;
-        float downforce = speed * speed * 0.45f;
+        float downforce = speed * speed * 0.25f;  // was 0.4 — less drag at top end
         context.rb.AddForce(-context.transform.up * downforce, ForceMode.Force);
     }
 

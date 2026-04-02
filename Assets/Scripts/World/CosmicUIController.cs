@@ -134,10 +134,10 @@ public class CosmicUIController : MonoBehaviour
         float[] gearMinSpeed = {
     0f,   // neutral
     0f,   // 1st
-    7f,   // 2nd
-    14f,  // 3rd
-    22f,  // 4th
-    30f   // 5th
+    8f,   // 2nd
+    17f,  // 3rd
+    27f,  // 4th
+    38f   // 5th
 };
 
         bool up = false;
