@@ -120,7 +120,7 @@ public class CosmicUIController : MonoBehaviour
             return;
         }
 
-        // ✅ USE ROAD DIRECTION (FIXED)
+
         Vector3 roadForward = layout.GetRoadDirectionAt(vehicle.transform.position);
         float alignment = Vector3.Dot(roadForward, vel.normalized);
 
@@ -130,7 +130,7 @@ public class CosmicUIController : MonoBehaviour
 
         float speed = vehicle.rb.velocity.magnitude;
 
-        // 🔥 SAME thresholds as DrivingState (IMPORTANT)
+
         float[] gearMinSpeed = {
     0f,   // neutral
     0f,   // 1st
@@ -143,20 +143,20 @@ public class CosmicUIController : MonoBehaviour
         bool up = false;
         bool down = false;
 
-        // ---------------- UPSHIFT ----------------
+
         if (vehicle.currentGear > 0 &&
             vehicle.currentGear < vehicle.forwardGearRatios.Length)
         {
             int nextGear = vehicle.currentGear + 1;
 
             if (speed > gearMinSpeed[nextGear] &&
-                rpmNorm > 0.75f) // softer than before
+                rpmNorm > 0.75f) 
             {
                 up = true;
             }
         }
 
-        // ---------------- DOWNSHIFT ----------------
+
         if (vehicle.currentGear > 1)
         {
             if (speed < gearMinSpeed[vehicle.currentGear] + 1.5f)
@@ -165,7 +165,6 @@ public class CosmicUIController : MonoBehaviour
             }
         }
 
-        // PRIORITY SYSTEM
         if (wrong)
         {
             wrongAlpha = Mathf.Lerp(wrongAlpha, 1f, Time.deltaTime * textFadeSpeed);
@@ -207,10 +206,10 @@ public class CosmicUIController : MonoBehaviour
             if (name.Contains("dualshock") || name.Contains("dualsense"))
                 return "△";
 
-            return "Y"; // xbox default
+            return "Y"; 
         }
 
-        return "R"; // keyboard fallback
+        return "R"; 
     }
 
     void ApplyText(GameObject obj, TextMesh mesh, float alpha, Color color, float scaleMul)
@@ -223,23 +222,23 @@ public class CosmicUIController : MonoBehaviour
 
         obj.transform.localPosition = localPos;
 
-        // 👉 face camera correctly
+
         obj.transform.rotation =
             Quaternion.LookRotation(
                 obj.transform.position - mainCamera.transform.position
             );
 
-        // 🔥 SCALE FIX: compensate for distance
+
         float distance =
             Vector3.Distance(mainCamera.transform.position, obj.transform.position);
 
         float scale =
-            distance * 0.0025f; // THIS is the key
+            distance * 0.0025f; 
 
         obj.transform.localScale =
             Vector3.one * scale * scaleMul;
 
-        // apply alpha
+
         Color c = color;
         c.a = alpha;
 
@@ -300,9 +299,7 @@ public class CosmicUIController : MonoBehaviour
         }
     }
 
-    // ==================================================
-    // SKY ANCHOR
-    // ==================================================
+
     void AnchorToSky()
     {
         Vector3 camPos = mainCamera.transform.position;
@@ -310,14 +307,13 @@ public class CosmicUIController : MonoBehaviour
         Vector3 forward = mainCamera.transform.forward;
         Vector3 right = mainCamera.transform.right;
 
-        // 🔥 ORIGINAL POSITION (KEEP THIS)
+
         Vector3 basePos =
             camPos +
             forward * skyDistance +
             Vector3.up * skyHeight;
 
-        // 🔥 SMALL HORIZONTAL OFFSET (FIX DRIFT)
-        float horizontalOffset = -20; // tweak 50–120
+        float horizontalOffset = -20; 
 
         Vector3 targetPos =
             basePos + right * horizontalOffset;
@@ -331,9 +327,7 @@ public class CosmicUIController : MonoBehaviour
             );
     }
 
-    // ==================================================
-    // ROOT OBJECTS
-    // ==================================================
+
     void CreateRoots()
     {
         arcRoot = new GameObject("ArcRoot").transform;
@@ -356,9 +350,7 @@ public class CosmicUIController : MonoBehaviour
         glyphRoot.localRotation = Quaternion.identity;
     }
 
-    // ==================================================
-    // CLEAN ARC BUILD
-    // ==================================================
+
     void BuildArc()
     {
         for (int layer = 0; layer < arcLayers; layer++)
@@ -393,9 +385,7 @@ public class CosmicUIController : MonoBehaviour
         }
     }
 
-    // ==================================================
-    // VOLUMETRIC HAZE
-    // ==================================================
+
     void BuildHaze()
     {
         for (int i = 0; i < arcStarCount; i++)
@@ -431,12 +421,7 @@ public class CosmicUIController : MonoBehaviour
 
 
 
-    // ==================================================
-    // SPEED FILL SYSTEM
-    // ==================================================
-    // ==================================================
-    // SPEED FILL SYSTEM (CLEAN WHITE + REDLINE PULSE)
-    // ==================================================
+
     void UpdateArcFill()
     {
         float speedNorm =
@@ -462,12 +447,12 @@ public class CosmicUIController : MonoBehaviour
 
         bool inRedline = rpmNorm > redlineThreshold;
 
-        // periodic pulse when redlining (0.5–1 sec rhythm)
+
         float pulse = 0f;
         if (inRedline)
         {
             pulse =
-                Mathf.Sin(Time.time * 6f) * 0.5f + 0.5f; // 0–1 wave
+                Mathf.Sin(Time.time * 6f) * 0.5f + 0.5f; 
         }
 
         for (int i = 0; i < arcStars.Count; i++)
@@ -477,7 +462,6 @@ public class CosmicUIController : MonoBehaviour
 
             float baseAlpha = lit ? 1f : 0.05f;
 
-            // Subtle rpm shimmer (always white)
             float shimmer =
                 Mathf.Sin(Time.time * rpmShimmerSpeed + i * 0.3f)
                 * rpmNorm * rpmShimmerIntensity;
@@ -498,16 +482,16 @@ public class CosmicUIController : MonoBehaviour
                 (baseAlpha + shimmer + shiftPulse) * revealFactor;
 
 
-            // Redline pulse (purely brightness + slight thickness)
+
             if (inRedline && lit)
             {
-                float pulseBoost = pulse * 0.35f; // noticeable but not dramatic
+                float pulseBoost = pulse * 0.35f; 
                 targetAlpha += pulseBoost;
             }
 
             Color c = arcStars[i].material.color;
 
-            // Always white stars
+
             c.r = 1f;
             c.g = 1f;
             c.b = 1f;
@@ -518,7 +502,7 @@ public class CosmicUIController : MonoBehaviour
 
             arcStars[i].material.color = c;
 
-            // Thickness swell during redline pulse
+
             float thicknessBoost = inRedline ? pulse * 0.15f : 0f;
 
             Vector3 scale = arcStars[i].transform.localScale;
@@ -530,9 +514,7 @@ public class CosmicUIController : MonoBehaviour
 
 
 
-    // ==================================================
-    // GLYPH SYSTEM (unchanged)
-    // ==================================================
+
     void UpdateGlyph()
     {
         if (vehicle.currentGear == lastGear) return;

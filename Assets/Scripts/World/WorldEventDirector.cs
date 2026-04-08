@@ -91,7 +91,7 @@ public class WorldEventDirector : MonoBehaviour
                 break;
         }
 
-        // shuffle inside phase
+
         for (int i = 0; i < arcOrder.Count; i++)
         {
             int r = Random.Range(i, arcOrder.Count);
@@ -150,19 +150,19 @@ public class WorldEventDirector : MonoBehaviour
                 road.rhythmIntensity = 1.5f;
                 break;
 
-            case 4: // Dream (very meditative)
+            case 4: // Dream 
                 road.arcAmplitude = 0.45f;
                 road.arcFrequency = 0.4f;
                 road.rhythmIntensity = 0.55f;
                 break;
 
-            case 5: // Surge (long sweeping curves)
+            case 5: // Surge 
                 road.arcAmplitude = 1.2f;
                 road.arcFrequency = 0.8f;
                 road.rhythmIntensity = 1.35f;
                 break;
 
-            case 6: // Drift (slow drifting road)
+            case 6: // Drift
                 road.arcAmplitude = 0.8f;
                 road.arcFrequency = 0.35f;
                 road.rhythmIntensity = 0.8f;

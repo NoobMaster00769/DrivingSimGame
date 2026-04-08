@@ -3,8 +3,8 @@ using System.Collections;
 
 public class CameraDirector : MonoBehaviour
 {
-    public Camera menuCamera;        // static menu cam
-    public Camera gameplayCamera;    // main camera (with CarFollowCamera)
+    public Camera menuCamera;        
+    public Camera gameplayCamera;    
 
     public float transitionTime = 0.6f;
 
@@ -15,7 +15,7 @@ public class CameraDirector : MonoBehaviour
 
     void Awake()
     {
-        // Store menu camera original position
+
         menuStartPos = menuCamera.transform.position;
         menuStartRot = menuCamera.transform.rotation;
     }
@@ -33,7 +33,7 @@ public class CameraDirector : MonoBehaviour
         if (isTransitioning) return;
 
         StopAllCoroutines();
-        StartCoroutine(GameplayToMenu()); // 🔥 FIX: use correct coroutine
+        StartCoroutine(GameplayToMenu()); 
     }
 
     IEnumerator MenuToGameplay()
@@ -64,11 +64,10 @@ public class CameraDirector : MonoBehaviour
             yield return null;
         }
 
-        // snap
         menuT.position = targetPos;
         menuT.rotation = targetRot;
 
-        // switch
+
         menuCamera.gameObject.SetActive(false);
         gameplayCamera.gameObject.SetActive(true);
 
@@ -82,7 +81,6 @@ public class CameraDirector : MonoBehaviour
         Transform menuT = menuCamera.transform;
         Transform gameT = gameplayCamera.transform;
 
-        // 🔥 start from gameplay camera position
         menuT.position = gameT.position;
         menuT.rotation = gameT.rotation;
 
@@ -92,7 +90,7 @@ public class CameraDirector : MonoBehaviour
         Vector3 targetPos = new Vector3(
             menuStartPos.x,
             menuStartPos.y,
-            gameT.position.z   // 🔥 FOLLOW CAR FORWARD
+            gameT.position.z   
         );
 
         Quaternion targetRot = menuStartRot;
@@ -112,7 +110,7 @@ public class CameraDirector : MonoBehaviour
             yield return null;
         }
 
-        // snap back to original menu position
+
         menuT.position = targetPos;
         menuT.rotation = targetRot;
 

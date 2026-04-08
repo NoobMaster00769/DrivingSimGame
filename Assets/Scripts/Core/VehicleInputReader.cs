@@ -8,10 +8,9 @@ public class VehicleInputReader : MonoBehaviour
     public float Steering { get; private set; }
     public float Brake { get; private set; }
 
-    // DIGITAL CLUTCH (keyboard)
+
     public float Clutch { get; private set; }
 
-    // One-frame shift flags
     public bool ShiftUp { get; private set; }
     public bool ShiftDown { get; private set; }
     public bool ResetCar { get; private set; }
@@ -68,7 +67,7 @@ public class VehicleInputReader : MonoBehaviour
     {
         PausePressed = false;
     }
-    // CALLED MANUALLY FROM DrivingState
+
     public void ConsumeShifts()
     {
         ShiftUp = false;

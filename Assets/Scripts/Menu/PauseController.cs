@@ -22,9 +22,7 @@ public class PauseSystem : MonoBehaviour
             Gamepad.current != null &&
             Gamepad.current.startButton.wasPressedThisFrame;
 
-        // ----------------------------------
-        // 🎮 START = ALWAYS TOGGLE
-        // ----------------------------------
+
         if (start)
         {
             if (state == GameState.Driving)
@@ -35,9 +33,7 @@ public class PauseSystem : MonoBehaviour
             return;
         }
 
-        // ----------------------------------
-        // ⌨️ ESC LOGIC (SMART)
-        // ----------------------------------
+
         if (!esc) return;
 
         if (state == GameState.Driving)
@@ -46,12 +42,11 @@ public class PauseSystem : MonoBehaviour
         }
         else if (state == GameState.Paused)
         {
-            // 🔥 ONLY resume if PAUSE MENU is active
+
             if (IsPauseMenuActive())
             {
                 Resume();
             }
-            // ❌ otherwise do nothing → menus handle ESC as back
         }
     }
 
@@ -65,20 +60,15 @@ public class PauseSystem : MonoBehaviour
 
     void EnterPause()
     {
-        // prevent double triggering
         if (GameStateController.Instance.currentState == GameState.Paused)
             return;
 
-        // camera first
         cameraDirector.SwitchToMenu();
 
-        // open pause menu instantly
         menuManager.OpenMenuInstant(pauseMenuIndex);
 
-        // ensure controller is active
         menuManager.menuControllers[pauseMenuIndex].enabled = true;
 
-        // delay state to avoid race condition
         StartCoroutine(SetPausedNextFrame());
     }
 
@@ -90,10 +80,10 @@ public class PauseSystem : MonoBehaviour
 
     public void Resume()
     {
-        // camera first
+
         cameraDirector.SwitchToGameplay();
 
-        // 🔥 disable ONLY current menu
+
         if (pauseMenuIndex < menuManager.menuControllers.Length)
             menuManager.menuControllers[pauseMenuIndex].gameObject.SetActive(false);
 
@@ -108,10 +98,10 @@ public class PauseSystem : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        // 🔥 Fade to black
+
         yield return ScreenFader.Instance.FadeOut(0.5f);
 
-        // 🔥 Reset scene
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

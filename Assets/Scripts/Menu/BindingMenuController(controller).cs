@@ -38,17 +38,16 @@ public class BindingListMenuController_controller : MonoBehaviour
         AnimateSelection();
     }
 
-    // --------------------------------------------------
-    // 🔥 AUTO INPUT DETECTION
+
     void DetectInputMode()
     {
-        // any key pressed → keyboard mode
+
         if (Keyboard.current.anyKey.wasPressedThisFrame)
         {
             currentMode = InputMode.Keyboard;
         }
 
-        // any gamepad input → controller mode
+
         if (Gamepad.current != null)
         {
             if (Gamepad.current.leftStick.ReadValue().sqrMagnitude > 0.01f ||
@@ -68,11 +67,11 @@ public class BindingListMenuController_controller : MonoBehaviour
     .SetMenuType(NavigationFooterUI.MenuType.Vertical);
     }
 
-    // --------------------------------------------------
+
 
     void HandleNavigation()
     {
-        // 🔥 UNIVERSAL BACK (Keyboard + Controller)
+
         bool backPressed =
             Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);
@@ -96,7 +95,7 @@ public class BindingListMenuController_controller : MonoBehaviour
         float vertical = 0f;
         bool select = false;
 
-        // 🎮 Controller
+
         if (Gamepad.current != null)
         {
             vertical += Gamepad.current.leftStick.y.ReadValue();
@@ -105,7 +104,7 @@ public class BindingListMenuController_controller : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard (still allowed)
+
         if (Keyboard.current.wKey.isPressed) vertical += 1f;
         if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 
@@ -118,7 +117,7 @@ public class BindingListMenuController_controller : MonoBehaviour
         if (select) Activate();
     }
 
-    // --------------------------------------------------
+
 
     void ChangeIndex(int dir)
     {
@@ -133,7 +132,7 @@ public class BindingListMenuController_controller : MonoBehaviour
         timer = 0;
     }
 
-    // --------------------------------------------------
+
 
     void Activate()
     {
@@ -160,7 +159,7 @@ public class BindingListMenuController_controller : MonoBehaviour
         timer = 0;
     }
 
-    // --------------------------------------------------
+
 
     void MoveGuidingStar()
     {
@@ -177,7 +176,7 @@ public class BindingListMenuController_controller : MonoBehaviour
         );
     }
 
-    // --------------------------------------------------
+
 
     void AnimateSelection()
     {

@@ -2,26 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Infinite spline road. Road is purely particle-based visually.
-/// Sections spawn at the tip, are fully visible while near the player,
-/// and fade out + get destroyed when far enough behind.
-///
-/// FADE LOGIC (fixed):
-///   - Sections AHEAD of player: fully visible (alpha = 1) as soon as spawned.
-///     They fade IN only during the last fxFadeInDistance before the player
-///     reaches them — creating the "materialising ahead" effect.
-///   - Sections BEHIND player: stay fully visible until fxKeepDistance,
-///     then fade out over fxFadeOutDistance, then get destroyed.
-///
-/// FIELD NAMES: match the original LevelLayoutGenerator exactly so your
-/// existing Inspector assignments carry over without reassigning.
-/// </summary>
+
 public class LevelLayoutGenerator : MonoBehaviour
 {
-    // ─────────────────────────────────────────────────────────────
-    //  INSPECTOR — original field names preserved
-    // ─────────────────────────────────────────────────────────────
+
 
     public LevelChunkData firstChunk;
     public RoadState roadState;
@@ -91,9 +75,6 @@ public class LevelLayoutGenerator : MonoBehaviour
     [Range(0f, 1f)] public float branchChance = 0.12f;
     public float branchStrength = 0.6f, branchDuration = 6f;
 
-    // ─────────────────────────────────────────────────────────────
-    //  ROAD SECTION
-    // ─────────────────────────────────────────────────────────────
 
     class Section
     {
@@ -102,22 +83,17 @@ public class LevelLayoutGenerator : MonoBehaviour
         public ParticleSystem surfPS, depthPS, leftPS, rightPS;
         public Vector3 center;
         public float sectionLen;
-        // Max emission rates set at spawn — used to scale fade without compounding
+
         public float surfMaxRate, depthMaxRate, leftMaxRate, rightMaxRate;
     }
 
     List<Section> sections = new List<Section>();
 
-    // ─────────────────────────────────────────────────────────────
-    //  SPLINE DATA
-    // ─────────────────────────────────────────────────────────────
 
     List<Vector3> pts = new List<Vector3>();
     List<Vector3> tans = new List<Vector3>();
 
-    // ─────────────────────────────────────────────────────────────
-    //  TIP STATE
-    // ─────────────────────────────────────────────────────────────
+
 
     Vector3 tipPos;
     Vector3 tipFwd;
@@ -126,9 +102,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     int totalSteps;
     int nextSectionStep;
 
-    // ─────────────────────────────────────────────────────────────
-    //  CURVATURE + BRANCHING
-    // ─────────────────────────────────────────────────────────────
+
 
     float smoothCurvature, turnMomentum;
     float voidTimer;
@@ -136,9 +110,7 @@ public class LevelLayoutGenerator : MonoBehaviour
     bool branchActive, isRecovering;
     public static bool isInVoid = false;
 
-    // ─────────────────────────────────────────────────────────────
-    //  START
-    // ─────────────────────────────────────────────────────────────
+
 
     void Start()
     {
@@ -147,15 +119,12 @@ public class LevelLayoutGenerator : MonoBehaviour
         totalSteps = 0;
         nextSectionStep = pointsPerSection;
 
-        // Seed full road ahead. All sections spawned here start at alpha=1
-        // because the player hasn't moved yet — they're all "around" the start.
+
         for (int i = 0; i < pointsAhead; i++)
             Step();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  UPDATE
-    // ─────────────────────────────────────────────────────────────
+
 
     void Update()
     {
@@ -167,8 +136,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             input.ConsumeReset();
         }
 
-        // Keep road topped up ahead.
-        // Hard cap prevents infinite loop if tipPos drifts unexpectedly.
+
         int stepsThisFrame = 0;
         int maxStepsPerFrame = pointsPerSection * 4;
         while (stepsThisFrame < maxStepsPerFrame &&
@@ -179,7 +147,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             stepsThisFrame++;
         }
 
-        // Off-road
+
         if (IsOffRoad())
         {
             voidTimer += Time.deltaTime;
@@ -197,13 +165,11 @@ public class LevelLayoutGenerator : MonoBehaviour
         TrimPoints();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  STEP
-    // ─────────────────────────────────────────────────────────────
+
 
     void Step()
     {
-        // Curvature — identical to original SpawnNextChunk
+
         smoothCurvature = Mathf.Lerp(smoothCurvature, roadState.curvature, 0.45f);
         smoothCurvature += Mathf.Sin(Time.time * 0.8f + totalSteps * 0.3f) * 0.08f;
         smoothCurvature += Mathf.Sin(Time.time * 0.15f) * 0.15f;
@@ -211,16 +177,14 @@ public class LevelLayoutGenerator : MonoBehaviour
         float targetTurn = Mathf.Clamp(smoothCurvature * yawStrength, -28f, 28f);
         turnMomentum += (targetTurn - turnMomentum) * 0.45f;
 
-        // When RoadState spiral is over budget, pull turn momentum to zero fast.
-        // Without this the spline physically loops back on itself.
+
         if (roadState != null && roadState.SpiralOverBudget)
             turnMomentum = Mathf.Lerp(turnMomentum, 0f, 0.35f);
 
-        // Hard clamp per-step rotation. At spacing=3, chunkLength=40:
-        // stepScale=0.075, so 1.5 deg/step max = ~20 deg per chunkLength.
+
         float stepScale = pointSpacing / chunkLength;
 
-        // 🔥 HARD LIMIT PER STEP
+
         float turnStep = Mathf.Clamp(turnMomentum * stepScale, -1.4f, 1.4f);
 
         tipFwd = Quaternion.Euler(0f, turnStep, 0f) * tipFwd;
@@ -229,9 +193,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         if (tipFwd.sqrMagnitude < 0.0001f) tipFwd = Vector3.forward;
         tipFwd.Normalize();
 
-        // Micro lateral drift applied ONLY to the stored point, NOT to tipPos.
-        // Adding it to tipPos accumulates permanently and sends the road in a
-        // random direction after curves, and causes infinite loops in Update.
+
         float drift = Mathf.Sin(totalSteps * 0.2f) * 0.5f * stepScale;
         Vector3 driftedPos = tipPos + Vector3.Cross(Vector3.up, tipFwd) * drift;
 
@@ -245,17 +207,11 @@ public class LevelLayoutGenerator : MonoBehaviour
             nextSectionStep = totalSteps + pointsPerSection;
         }
 
-        // Advance tip cleanly — no drift accumulation on tipPos
+
         tipPos += tipFwd * pointSpacing;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  ROAD HALF WIDTH — from RoadState, identical to original
-    //
-    //  Original: baseWidth = Lerp(1.2, 0.85, roadState.width)
-    //            chunk.localScale.x = baseWidth
-    //            Road mesh 10 units wide at scale 1 → halfWidth = baseWidth * 5
-    // ─────────────────────────────────────────────────────────────
+
 
     float GetHalfWidth(Vector3 pos)
     {
@@ -265,9 +221,7 @@ public class LevelLayoutGenerator : MonoBehaviour
         return (baseWidth + widthPulse) * boost * 5f;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  SPAWN SECTION
-    // ─────────────────────────────────────────────────────────────
+
 
     void SpawnSection()
     {
@@ -302,21 +256,20 @@ public class LevelLayoutGenerator : MonoBehaviour
         root.transform.position = center;
         root.transform.rotation = rot;
 
-        // BANKING (same as old system)
+
         float bank = Mathf.Lerp(-5f, 5f, roadState.banking)
                    + Mathf.Sin(Time.time * 0.6f + center.z * 0.08f) * 1.2f;
         root.transform.Rotate(Vector3.forward, bank, Space.Self);
 
-        // COLLIDER
+
         var col = root.AddComponent<BoxCollider>();
         col.size = new Vector3(hw * 2f + colliderWidthPadding, 0.5f, len + pointSpacing * 0.8f);
 
-        // 🔥 CRITICAL: density normalization
+
         float densityScale = len / chunkLength;
 
-        // =========================
-        // STAR ROAD FX
-        // =========================
+
+
         ParticleSystem surfPS = null;
         float surfMaxRate = 0f;
 
@@ -343,9 +296,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                     densityScale);
         }
 
-        // =========================
-        // DEPTH FX
-        // =========================
+
         ParticleSystem depthPS = null;
         float depthMaxRate = 0f;
 
@@ -364,9 +315,6 @@ public class LevelLayoutGenerator : MonoBehaviour
                     densityScale);
         }
 
-        // =========================
-        // BOUNDARY (EXACT OLD SYSTEM)
-        // =========================
         ParticleSystem leftPS = null, rightPS = null;
         float leftMaxRate = 0f, rightMaxRate = 0f;
 
@@ -376,7 +324,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             float wallColY = boundaryHeight * 0.5f + boundaryOffsetY;
             float wallLenZ = len + pointSpacing * 0.8f;
 
-            // LEFT
+
             var lgo = Instantiate(boundaryParticlePrefab, root.transform);
             lgo.transform.localPosition = new Vector3(-(wallX + boundaryColliderThickness * 1f), wallColY, 0f);
 
@@ -393,7 +341,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                     len * 1.05f,
                     densityScale);
 
-            // RIGHT
+
             var rgo = Instantiate(boundaryParticlePrefab, root.transform);
             rgo.transform.localPosition = new Vector3(wallX + boundaryColliderThickness * 1f, wallColY, 0f);
 
@@ -409,7 +357,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                     densityScale);
         }
 
-        // 🔥 CRITICAL FIX (YOU WERE MISSING THIS)
+
         sections.Add(new Section
         {
             root = root,
@@ -444,7 +392,6 @@ public class LevelLayoutGenerator : MonoBehaviour
         float sz = mn.startSize.constant;
         mn.startSize = new ParticleSystem.MinMaxCurve(sz, sz * 1.35f);
 
-        // ✅ ORIGINAL COLOR (NO BLUE BUG)
         Color coolWhite = new Color(0.85f, 0.92f, 1f);
         Color softCyan = new Color(0.6f, 0.85f, 1f);
         Color softBlue = new Color(0.5f, 0.7f, 1f);
@@ -461,13 +408,13 @@ public class LevelLayoutGenerator : MonoBehaviour
             Color.Lerp(mid, coolWhite, 0.2f)
         );
 
-        // ✅ IMPORTANT (old behavior)
+
         var li = ps.lights;
         li.enabled = shapeX > 1f;
         li.intensityMultiplier = 0.6f * fxBrightnessMultiplier;
         li.rangeMultiplier = 0.4f;
 
-        // Fade curve
+
         var col = ps.colorOverLifetime;
         col.enabled = true;
 
@@ -533,7 +480,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             );
 
             var lights = ps.lights;
-            lights.enabled = false; // 🔥 IMPORTANT FPS FIX
+            lights.enabled = false; 
 
             var sizeOverLifetime = ps.sizeOverLifetime;
             sizeOverLifetime.enabled = true;
@@ -545,33 +492,7 @@ public class LevelLayoutGenerator : MonoBehaviour
 
             sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, curve);
         }
-        // ─────────────────────────────────────────────────────────────
-        //  CONFIGURE PS — called once at spawn, returns the set rate
-        //  so we can scale it cleanly during fade without re-reading.
-        //
-        //  disableLights: boundary walls pass true — particle lights on a
-        //  1D wall produce one point light per live particle, which is the
-        //  dominant FPS cost. Surface/depth PS pass false to keep their glow.
-        // ─────────────────────────────────────────────────────────────
 
-
-        // ─────────────────────────────────────────────────────────────
-        //  UPDATE SECTIONS — fade + destroy
-        //
-        //  CORRECT FADE MODEL:
-        //
-        //  For sections AHEAD of player (dot > 0):
-        //    dist > fxBirthDistance  → alpha = 0  (not visible yet, too far ahead)
-        //    dist < fxBirthDistance  → alpha fades IN from 0 to 1 as player approaches
-        //    Very close ahead        → alpha = 1
-        //
-        //  For sections BEHIND player (dot <= 0):
-        //    dist < fxKeepDistance   → alpha = 1  (fully visible just behind)
-        //    dist > fxKeepDistance   → alpha fades OUT toward 0
-        //    dist > fxKeepDistance + fxFadeOutDistance → DESTROY
-        //
-        //  This gives 300+ units of visible road ahead and a natural trail behind.
-        // ─────────────────────────────────────────────────────────────
 
         void UpdateSections()
         {
@@ -590,13 +511,12 @@ public class LevelLayoutGenerator : MonoBehaviour
 
                 if (dot > 0f)
                 {
-                    // Section is ahead — fade in as player approaches
-                    // At dist=fxBirthDistance: alpha=0. At dist=0: alpha=1.
+
                     alpha = Mathf.Clamp01(1f - (dist / fxBirthDistance));
                 }
                 else
                 {
-                    // Section is behind — keep full then fade out
+
                     if (dist <= fxKeepDistance)
                     {
                         alpha = 1f;
@@ -611,7 +531,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                 float t = Mathf.SmoothStep(0f, 1f, alpha);
                 ApplySectionFade(sec, t);
 
-                // Destroy when fully faded out behind player
+
                 if (dot <= 0f && dist > destroyDist)
                 {
                     Destroy(sec.root);
@@ -628,8 +548,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             ApplyPSFade(sec.rightPS, sec.rightMaxRate, t);
         }
 
-        // Fades emission rate using the stored max rate — never reads current value
-        // so there is zero risk of compounding across frames.
+
         void ApplyPSFade(ParticleSystem ps, float maxRate, float t)
         {
             if (ps == null) return;
@@ -641,9 +560,7 @@ public class LevelLayoutGenerator : MonoBehaviour
                 li.intensityMultiplier = 0.6f * fxBrightnessMultiplier * t;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  TRIM POINTS
-        // ─────────────────────────────────────────────────────────────
+
 
         void TrimPoints()
         {
@@ -657,9 +574,6 @@ public class LevelLayoutGenerator : MonoBehaviour
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  OFF-ROAD
-        // ─────────────────────────────────────────────────────────────
 
         bool IsOffRoad()
         {
@@ -673,13 +587,11 @@ public class LevelLayoutGenerator : MonoBehaviour
                 float d = Vector3.Distance(player.position, a + ab * t);
                 if (d < minD) minD = d;
             }
-            // halfwidth ~5, give 1.5 buffer
+
             return minD > 6.5f;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  RECOVER ROUTINE
-        // ─────────────────────────────────────────────────────────────
+
 
         IEnumerator RecoverRoutine()
         {
@@ -712,9 +624,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             isRecovering = false;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  GET ROAD DIRECTION
-        // ─────────────────────────────────────────────────────────────
+
 
         public Vector3 GetRoadDirectionAt(Vector3 position)
         {
@@ -732,9 +642,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             return best;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  BRANCHING
-        // ─────────────────────────────────────────────────────────────
+
 
         void UpdateBranching()
         {
@@ -755,9 +663,7 @@ public class LevelLayoutGenerator : MonoBehaviour
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        //  DESTROY
-        // ─────────────────────────────────────────────────────────────
+
 
         void OnDestroy()
         {

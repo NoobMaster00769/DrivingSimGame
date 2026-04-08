@@ -12,7 +12,7 @@ public class ScreenFader : MonoBehaviour
     {
         Instance = this;
 
-        // 🔥 FORCE BLACK ON LOAD
+
         if (fadeImage != null)
         {
             var c = fadeImage.color;

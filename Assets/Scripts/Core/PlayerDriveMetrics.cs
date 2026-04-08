@@ -28,7 +28,7 @@ public class PlayerDriveMetrics : MonoBehaviour
         float throttle = context.input.Throttle;
         float speed = rb.velocity.magnitude;
 
-        // INTENSITY
+
         float rpmNorm = context.engineRPM / context.maxRPM;
         float speedNorm = speed / context.maxSpeed;
 
@@ -37,11 +37,11 @@ public class PlayerDriveMetrics : MonoBehaviour
             speedNorm * 0.5f
         );
 
-        // CONTROL QUALITY (less harsh)
+
         float lateralVel =
             Mathf.Abs(Vector3.Dot(rb.velocity, transform.right));
 
-        float drift = Mathf.Clamp01(lateralVel / 15f); // was 12
+        float drift = Mathf.Clamp01(lateralVel / 15f); 
 
         controlQuality =
             1f - Mathf.Clamp01(
@@ -49,7 +49,7 @@ public class PlayerDriveMetrics : MonoBehaviour
                 drift * 0.65f
             );
 
-        // RHYTHM
+
         float steeringDelta =
             Mathf.Abs(steering - steeringHistory);
 
@@ -66,7 +66,7 @@ public class PlayerDriveMetrics : MonoBehaviour
         steeringHistory = steering;
         throttleHistory = throttle;
 
-        // FLOW — easier entry, slower decay
+
         if (controlQuality > 0.7f &&
             rhythm > 0.6f &&
             intensity < 0.85f)

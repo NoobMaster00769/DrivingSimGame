@@ -18,7 +18,7 @@ public class WorldAudioController : MonoBehaviour
     [Header("Layers")]
     public AudioSource pianoLayer;
     public AudioSource cosmicAmbience;
-    public AudioSource oceanAmbience;   // optional beach waves
+    public AudioSource oceanAmbience;   
     public AudioSource wind;
     public AudioSource engine;
     public AudioSource specialFX;
@@ -54,9 +54,7 @@ public class WorldAudioController : MonoBehaviour
         UpdateMusicFiltering();
     }
 
-    // --------------------------------------------------
-    // ARC MUSIC CONTROL
-    // --------------------------------------------------
+
 
     void UpdateArcMusic()
     {
@@ -92,7 +90,7 @@ public class WorldAudioController : MonoBehaviour
             t += Time.deltaTime;
             float k = t / 5f;
 
-            float mix = masterVolume * bgmVolume * 1.3f; // BOOST
+            float mix = masterVolume * bgmVolume * 1.3f; 
 
             a.volume = Mathf.Lerp(targetVolume, 0f, k) * mix;
             b.volume = Mathf.Lerp(0f, targetVolume, k) * mix;
@@ -103,7 +101,7 @@ public class WorldAudioController : MonoBehaviour
         a.Stop();
     }
 
-    // slightly louder music but still background
+
     float GetArcMusicVolume(int arc)
     {
         switch (arc)
@@ -120,9 +118,7 @@ public class WorldAudioController : MonoBehaviour
         return 0.6f;
     }
 
-    // --------------------------------------------------
-    // MOTION SOUNDS (speed dependent)
-    // --------------------------------------------------
+
 
     void UpdateSpeedSounds()
     {
@@ -155,9 +151,7 @@ public class WorldAudioController : MonoBehaviour
         }
     }
 
-        // --------------------------------------------------
-        // ARC ATMOSPHERE
-        // --------------------------------------------------
+
 
         void UpdateArcAtmosphere()
     {

@@ -7,7 +7,7 @@ public class ControllerRebindItem : MonoBehaviour
 {
     [Header("Binding")]
     public string actionName;
-    public string compositePartName; // leave EMPTY for non-composite
+    public string compositePartName; 
 
     [Header("UI")]
     public TMP_Text keyText;
@@ -18,10 +18,10 @@ public class ControllerRebindItem : MonoBehaviour
     InputAction action;
     int currentIndex = -1;
 
-    string previousPath; // 🔥 store old key
-    InputActionRebindingExtensions.RebindingOperation currentOp; // 🔥 for ESC cancel
+    string previousPath; 
+    InputActionRebindingExtensions.RebindingOperation currentOp; 
 
-    // --------------------------------------------------
+
     bool initialized = false;
 
     public void EnsureInitialized(VehicleInputActions actions)
@@ -52,7 +52,7 @@ public class ControllerRebindItem : MonoBehaviour
         UpdateDisplay();
     }
 
-    // --------------------------------------------------
+
 
     public void StartRebind(Action onComplete)
     {
@@ -74,7 +74,7 @@ public class ControllerRebindItem : MonoBehaviour
 
         currentIndex = index;
 
-        // 🔥 store old key
+
         previousPath = action.bindings[index].effectivePath;
         if (string.IsNullOrEmpty(previousPath))
             previousPath = action.bindings[index].path;
@@ -91,18 +91,18 @@ public class ControllerRebindItem : MonoBehaviour
         currentOp.Start();
     }
 
-    // --------------------------------------------------
+
 
     void Update()
     {
-        // 🔥 ESC to cancel rebind
+
         if (currentOp != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             currentOp.Cancel();
         }
     }
 
-    // --------------------------------------------------
+
 
     int FindBindingIndex()
     {
@@ -110,7 +110,7 @@ public class ControllerRebindItem : MonoBehaviour
         {
             var b = action.bindings[i];
 
-            // ✅ COMPOSITE CASE
+
             if (!string.IsNullOrEmpty(compositePartName))
             {
                 if (!b.isPartOfComposite) continue;
@@ -128,7 +128,7 @@ public class ControllerRebindItem : MonoBehaviour
             if (string.IsNullOrEmpty(path))
                 continue;
 
-            // 🔥 FIX: detect ANY controller binding
+
             if (path.Contains("Gamepad") || path.Contains("XInput") || path.Contains("DualShock"))
             {
                 return i;
@@ -138,7 +138,7 @@ public class ControllerRebindItem : MonoBehaviour
         return -1;
     }
 
-    // --------------------------------------------------
+
 
     void Complete(InputActionRebindingExtensions.RebindingOperation op, Action onComplete)
     {
@@ -152,12 +152,11 @@ public class ControllerRebindItem : MonoBehaviour
         if (string.IsNullOrEmpty(newPath))
             newPath = action.bindings[currentIndex].path;
 
-        // 🔥 BLOCK duplicate
+
         if (IsKeyAlreadyUsed(newPath))
         {
             Debug.Log("Key already bound to another action");
 
-            // 🔁 revert
             action.ApplyBindingOverride(currentIndex, previousPath);
 
             UpdateDisplay();
@@ -189,7 +188,7 @@ public class ControllerRebindItem : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    // --------------------------------------------------
+
 
     bool IsKeyAlreadyUsed(string newPath)
     {
@@ -222,7 +221,6 @@ public class ControllerRebindItem : MonoBehaviour
         return false;
     }
 
-    // --------------------------------------------------
 
     public void UpdateDisplay()
     {
@@ -270,27 +268,21 @@ public class ControllerRebindItem : MonoBehaviour
             }
         }
 
-        // -------------------------------
-        // 🎮 BUTTONS
-        // -------------------------------
+
         readable = readable
             .Replace("button south", isPlayStation ? "Cross" : "A")
             .Replace("button east", isPlayStation ? "Circle" : "B")
             .Replace("button west", isPlayStation ? "Square" : "X")
             .Replace("button north", isPlayStation ? "Triangle" : "Y");
 
-        // -------------------------------
-        // 🎮 SHOULDERS / TRIGGERS
-        // -------------------------------
+
         readable = readable
             .Replace("left shoulder", isPlayStation ? "L1" : "LB")
             .Replace("right shoulder", isPlayStation ? "R1" : "RB")
             .Replace("left trigger", isPlayStation ? "L2" : "LT")
             .Replace("right trigger", isPlayStation ? "R2" : "RT");
 
-        // -------------------------------
-        // 🎮 STICKS
-        // -------------------------------
+
         readable = readable
             .Replace("left stick/x", "Left Stick → Right")
             .Replace("left stick/y", "Left Stick → Up")
@@ -299,9 +291,7 @@ public class ControllerRebindItem : MonoBehaviour
             .Replace("left stick", "Left Stick")
             .Replace("right stick", "Right Stick");
 
-        // -------------------------------
-        // 🎮 DPAD
-        // -------------------------------
+
         readable = readable
             .Replace("dpad/up", "D-Pad Up")
             .Replace("dpad/down", "D-Pad Down")
@@ -311,7 +301,7 @@ public class ControllerRebindItem : MonoBehaviour
         keyText.text = readable.ToUpper();
     }
 
-    // --------------------------------------------------
+
 
     public void SetSelected(bool active)
     {

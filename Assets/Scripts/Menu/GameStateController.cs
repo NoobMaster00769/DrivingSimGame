@@ -39,7 +39,7 @@ public class GameStateController : MonoBehaviour
                 break;
         }
 
-        // 🔥 HANDLE MENU VISIBILITY CLEANLY
+
         var menuManager = FindObjectOfType<MenuManager>();
 
         if (menuManager != null)

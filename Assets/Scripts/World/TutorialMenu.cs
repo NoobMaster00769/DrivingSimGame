@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class TutorialMenu : MonoBehaviour
 {
-    public int mainMenuIndex = 0; // set this to your main menu index
+    public int mainMenuIndex = 0; 
 
     float timer;
     bool canExit;
@@ -17,11 +17,11 @@ public class TutorialMenu : MonoBehaviour
 
         if (!canExit) return;
 
-        // Keyboard
+
         if (Keyboard.current.anyKey.wasPressedThisFrame)
             Exit();
 
-        // Controller
+
         if (Gamepad.current != null)
         {
             if (Gamepad.current.buttonSouth.wasPressedThisFrame ||

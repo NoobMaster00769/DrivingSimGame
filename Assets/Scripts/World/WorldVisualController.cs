@@ -31,7 +31,7 @@ public class WorldVisualController : MonoBehaviour
     {
         if (waterRenderer != null)
         {
-            // 🔥 IMPORTANT: get instance material (not shared)
+
             runtimeMat = waterRenderer.material;
         }
     }
@@ -64,11 +64,11 @@ public class WorldVisualController : MonoBehaviour
         runtimeMat.SetFloat("_WaveScale", waveScale);
         runtimeMat.SetFloat("_WaveSpeed", waveSpeed);
 
-        // 🔥 ADD subtle UV drift (breaks mirror/static look)
+
         Vector2 offset =
             new Vector2(Time.time * 0.02f, Time.time * 0.015f);
 
-        runtimeMat.SetVector("_UVOffset", offset); // only works if shader supports it
+        runtimeMat.SetVector("_UVOffset", offset); 
     }
 
     void UpdateSkybox()

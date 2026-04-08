@@ -25,7 +25,7 @@ public class CelestialMenuController : MonoBehaviour
 
     IEnumerator InitializeHalo()
     {
-        yield return null; // wait 1 frame
+        yield return null; 
 
         if (halos.Length > index)
             halos[index].Highlight(true);
@@ -64,7 +64,6 @@ public class CelestialMenuController : MonoBehaviour
         float horizontal = 0f;
         bool select = false;
 
-        // 🎮 Controller
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -73,7 +72,6 @@ public class CelestialMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
@@ -168,6 +166,6 @@ public class CelestialMenuController : MonoBehaviour
         var pause = FindObjectOfType<PauseSystem>();
 
         if (pause != null)
-            pause.Resume(); // uses CameraDirector internally
+            pause.Resume(); 
     }
 }

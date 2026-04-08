@@ -50,7 +50,6 @@ public class CarFollowCamera : MonoBehaviour
         float speed = rb ? rb.velocity.magnitude : 0f;
         float speed01 = Mathf.Clamp01(speed / maxSpeed);
 
-        // ── POSITION ─────────────────────────────────────────────────────────
         Vector3 localOffset = baseOffset;
         localOffset.z -= speedPullback * speed01;
         localOffset.y += speedLift * speed01;
@@ -62,7 +61,6 @@ public class CarFollowCamera : MonoBehaviour
             transform.position, desiredPos,
             ref posVelocity, smoothTime, Mathf.Infinity, Time.deltaTime);
 
-        // ── YAW ──────────────────────────────────────────────────────────────
         float targetYaw = target.eulerAngles.y;
         float prevYaw = smoothYaw;
 
@@ -70,21 +68,17 @@ public class CarFollowCamera : MonoBehaviour
             smoothYaw, targetYaw,
             ref yawVelocity, yawLag, Mathf.Infinity, Time.deltaTime);
 
-        // ── ROTATION ─────────────────────────────────────────────────────────
+   
         Quaternion baseRot = Quaternion.Euler(fixedPitch, smoothYaw, 0f);
 
-        // ── BANKING ───────────────────────────────────────────────────────────
-        // Double-smooth the yaw rate: first smooth the raw delta, then smooth
-        // the bank angle itself. This kills ALL micro-jitter from straight-line
-        // steering wiggles — bank only appears on sustained real corners.
         float rawYawRate = Mathf.DeltaAngle(prevYaw, smoothYaw) / Time.deltaTime;
         smoothYawRate = Mathf.SmoothDamp(
             smoothYawRate, rawYawRate,
             ref yawRateVelocity, 0.2f, Mathf.Infinity, Time.deltaTime);
 
-        // Scale by speed so there's zero bank at rest or slow speeds
+   
         float targetBank = Mathf.Clamp(
-            -smoothYawRate * 0.05f * (speed01 * speed01),   // quadratic: only kicks in at real speed
+            -smoothYawRate * 0.05f * (speed01 * speed01),  
             -bankAmount, bankAmount);
 
         smoothBank = Mathf.SmoothDampAngle(
@@ -93,7 +87,7 @@ public class CarFollowCamera : MonoBehaviour
 
         transform.rotation = baseRot * Quaternion.AngleAxis(smoothBank, Vector3.forward);
 
-        // ── FOV ──────────────────────────────────────────────────────────────
+     
         float targetFOV = baseFOV + maxFOVBoost * speed01;
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * fovSmooth);
     }

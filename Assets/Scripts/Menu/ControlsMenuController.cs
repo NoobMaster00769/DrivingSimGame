@@ -44,7 +44,7 @@ public class ControlsMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        // 🔥 BACK
+
         if (Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
         {
@@ -55,7 +55,7 @@ public class ControlsMenuController : MonoBehaviour
         float horizontal = 0f;
         bool select = false;
 
-        // 🎮 Controller
+
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -64,7 +64,7 @@ public class ControlsMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
+
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 

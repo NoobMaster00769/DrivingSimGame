@@ -10,14 +10,14 @@ public class TutorialUI : MonoBehaviour
 
     void Awake()
     {
-        // Ensure CanvasGroup exists
+
         if (canvasGroup == null)
             canvasGroup = GetComponent<CanvasGroup>();
 
         if (canvasGroup != null)
             canvasGroup.alpha = 0f;
 
-        Clear(); // start hidden
+        Clear(); 
     }
 
     public void Show(string message)

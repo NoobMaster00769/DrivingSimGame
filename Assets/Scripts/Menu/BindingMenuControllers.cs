@@ -37,7 +37,7 @@ public class BindingListMenuController : MonoBehaviour
 
     void HandleNavigation()
     {
-        // 🔥 UNIVERSAL BACK (Keyboard + Controller)
+
         bool backPressed =
             Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);
@@ -61,7 +61,7 @@ public class BindingListMenuController : MonoBehaviour
         float vertical = 0f;
         bool select = false;
 
-        // 🎮 Controller
+
         if (Gamepad.current != null)
         {
             vertical += Gamepad.current.leftStick.y.ReadValue();
@@ -70,7 +70,7 @@ public class BindingListMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard (still allowed)
+
         if (Keyboard.current.wKey.isPressed) vertical += 1f;
         if (Keyboard.current.sKey.isPressed) vertical -= 1f;
 

@@ -22,13 +22,13 @@ public class MenuManager : MonoBehaviour
 
     void Start()
     {
-        // Disable ALL menus first
+
         foreach (var m in menuControllers)
         {
             m.gameObject.SetActive(false);
         }
 
-        // Activate main menu
+
         currentMenu = menuControllers[0];
         currentT = currentMenu.transform;
 
@@ -92,7 +92,7 @@ public class MenuManager : MonoBehaviour
         Vector3 nextStart = new Vector3(direction * slideDistance, 0, 0);
         Vector3 nextEnd = Vector3.zero;
 
-        // curved path
+
         Vector3 currentPos =
             Vector3.Lerp(currentStart, currentEnd, t)
             + Vector3.up * Mathf.Sin(t * Mathf.PI) * curveHeight;
@@ -104,7 +104,7 @@ public class MenuManager : MonoBehaviour
         currentT.localPosition = currentPos;
         nextT.localPosition = nextPos;
 
-        // hyperspace stretch effect
+
         float scaleWarp = 1 + Mathf.Sin(t * Mathf.PI) * (stretch - 1);
 
         currentT.localScale = Vector3.one * scaleWarp;
@@ -121,7 +121,7 @@ public class MenuManager : MonoBehaviour
 
         nextT.localScale = Vector3.one;
 
-        // hide previous menu completely
+
         var halos = currentMenu.GetComponentsInChildren<StarHaloGenerator>();
 
         foreach (var h in halos)
@@ -131,7 +131,7 @@ public class MenuManager : MonoBehaviour
 
         currentMenu.gameObject.SetActive(false);
 
-        // activate new menu
+
         nextMenu.enabled = true;
 
         currentMenu = nextMenu;

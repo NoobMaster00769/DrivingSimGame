@@ -7,7 +7,7 @@ public class ControlRebindItem : MonoBehaviour
 {
     [Header("Binding")]
     public string actionName;
-    public string compositePartName; // leave EMPTY for non-composite
+    public string compositePartName; 
 
     [Header("UI")]
     public TMP_Text keyText;
@@ -18,10 +18,10 @@ public class ControlRebindItem : MonoBehaviour
     InputAction action;
     int currentIndex = -1;
 
-    string previousPath; // 🔥 store old key
-    InputActionRebindingExtensions.RebindingOperation currentOp; // 🔥 for ESC cancel
+    string previousPath; 
+    InputActionRebindingExtensions.RebindingOperation currentOp; 
 
-    // --------------------------------------------------
+
 
     public void Initialize(InputAction a)
     {
@@ -36,7 +36,7 @@ public class ControlRebindItem : MonoBehaviour
         UpdateDisplay();
     }
 
-    // --------------------------------------------------
+
 
     public void StartRebind(Action onComplete)
     {
@@ -58,7 +58,7 @@ public class ControlRebindItem : MonoBehaviour
 
         currentIndex = index;
 
-        // 🔥 store old key
+
         previousPath = action.bindings[index].effectivePath;
         if (string.IsNullOrEmpty(previousPath))
             previousPath = action.bindings[index].path;
@@ -75,18 +75,18 @@ public class ControlRebindItem : MonoBehaviour
         currentOp.Start();
     }
 
-    // --------------------------------------------------
+
 
     void Update()
     {
-        // 🔥 ESC to cancel rebind
+
         if (currentOp != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             currentOp.Cancel();
         }
     }
 
-    // --------------------------------------------------
+
 
     int FindBindingIndex()
     {
@@ -94,19 +94,18 @@ public class ControlRebindItem : MonoBehaviour
         {
             var b = action.bindings[i];
 
-            // ✅ COMPOSITE CASE
+
             if (!string.IsNullOrEmpty(compositePartName))
             {
                 if (!b.isPartOfComposite) continue;
                 if (!string.Equals(b.name, compositePartName, StringComparison.OrdinalIgnoreCase)) continue;
             }
-            // ✅ NON-COMPOSITE CASE
+
             else
             {
                 if (b.isComposite || b.isPartOfComposite) continue;
             }
 
-            // ✅ Accept keyboard
             string path = b.effectivePath;
 
             if (string.IsNullOrEmpty(path))
@@ -122,7 +121,7 @@ public class ControlRebindItem : MonoBehaviour
         return -1;
     }
 
-    // --------------------------------------------------
+
 
     void Complete(InputActionRebindingExtensions.RebindingOperation op, Action onComplete)
     {
@@ -136,12 +135,12 @@ public class ControlRebindItem : MonoBehaviour
         if (string.IsNullOrEmpty(newPath))
             newPath = action.bindings[currentIndex].path;
 
-        // 🔥 BLOCK duplicate
+
         if (IsKeyAlreadyUsed(newPath))
         {
             Debug.Log("Key already bound to another action");
 
-            // 🔁 revert
+
             action.ApplyBindingOverride(currentIndex, previousPath);
 
             UpdateDisplay();
@@ -173,7 +172,7 @@ public class ControlRebindItem : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    // --------------------------------------------------
+
 
     bool IsKeyAlreadyUsed(string newPath)
     {
@@ -206,7 +205,7 @@ public class ControlRebindItem : MonoBehaviour
         return false;
     }
 
-    // --------------------------------------------------
+
 
     public void UpdateDisplay()
     {
@@ -240,7 +239,7 @@ public class ControlRebindItem : MonoBehaviour
             ).ToUpper();
     }
 
-    // --------------------------------------------------
+
 
     public void SetSelected(bool active)
     {

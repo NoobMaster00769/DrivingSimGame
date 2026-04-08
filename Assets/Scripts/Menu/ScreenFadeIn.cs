@@ -10,7 +10,7 @@ public class SceneFadeIn : MonoBehaviour
 
     IEnumerator FadeRoutine()
     {
-        // 🔥 wait until ScreenFader is ready
+
         while (ScreenFader.Instance == null)
             yield return null;
 

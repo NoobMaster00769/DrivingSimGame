@@ -26,7 +26,6 @@ public class PauseMenuController : MonoBehaviour
         if (halos.Length > index)
             halos[index].Highlight(true);
 
-        // ✅ cache once (no spam FindObjectOfType)
         pauseSystem = FindObjectOfType<PauseSystem>();
         menuManager = FindObjectOfType<MenuManager>();
     }
@@ -35,11 +34,10 @@ public class PauseMenuController : MonoBehaviour
     {
         if (!enabled) return;
 
-        // 🔥 STRICT STATE CONTROL
         if (GameStateController.Instance.currentState != GameState.Paused)
             return;
 
-        // 🔥 BLOCK DURING MENU TRANSITION
+
         if (menuManager != null && menuManager.IsTransitioning())
             return;
 
@@ -57,7 +55,7 @@ public class PauseMenuController : MonoBehaviour
         float horizontal = 0f;
         bool select = false;
 
-        // 🎮 Controller
+
         if (Gamepad.current != null)
         {
             horizontal += Gamepad.current.leftStick.x.ReadValue();
@@ -66,14 +64,14 @@ public class PauseMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
+
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)
             select = true;
 
-        // Steering fallback
+
         horizontal += input.Steering;
 
         if (horizontal > 0.6f) ChangeIndex(1);

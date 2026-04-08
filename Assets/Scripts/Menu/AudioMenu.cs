@@ -49,7 +49,7 @@ public class AudioMenuController : MonoBehaviour
     {
         if (timer < inputCooldown) return;
 
-        // 🔥 BACK
+
         if (Keyboard.current.escapeKey.wasPressedThisFrame ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame))
         {
@@ -61,7 +61,7 @@ public class AudioMenuController : MonoBehaviour
         float vertical = 0f;
         bool select = false;
 
-        // 🎮 Controller
+
         if (Gamepad.current != null)
         {
             var stick = Gamepad.current.leftStick.ReadValue();
@@ -73,7 +73,7 @@ public class AudioMenuController : MonoBehaviour
                 select = true;
         }
 
-        // ⌨️ Keyboard
+
         if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
         if (Keyboard.current.dKey.isPressed) horizontal += 1f;
 
@@ -181,7 +181,7 @@ public class AudioMenuController : MonoBehaviour
 
     void ActivateOption()
     {
-        // Back → Settings
+
         if (index == 1)
         {
             FindObjectOfType<MenuManager>().OpenMenu(1);

@@ -21,7 +21,7 @@ public class RoadState : MonoBehaviour
     [HideInInspector] public float arcFrequency = 1f;
     [HideInInspector] public float rhythmIntensity = 1f;
 
-    // ─── Spiral yaw budget ────────────────────────────────────────
+
     [Header("Spiral Safety")]
     [Tooltip("Max degrees of accumulated road yaw a spiral may contribute before it is forced to end. 120–140 keeps it tight without looking weird.")]
     public float spiralYawCap = 60f;
@@ -54,35 +54,13 @@ public class RoadState : MonoBehaviour
 
     float curvatureVelocity;
 
-    // ─────────────────────────────────────────────────────────────
-    //  WIDTH EVENTS — additive, nothing above changed
-    //
-    //  Three event types run independently of all existing logic:
-    //
-    //  NARROW  — road pinches to ~40% normal width for a few seconds.
-    //            Creates a tense chicane feel. Triggered randomly but
-    //            never while already in a width event.
-    //
-    //  WIDE    — road opens to ~130% normal width. Breathing room after
-    //            a tight section or a long curve. Follows narrows ~40%
-    //            of the time to give a "relief" rhythm.
-    //
-    //  PULSE   — road slowly breathes in/out sinusoidally. Subtle,
-    //            runs between events as a low-level texture.
-    //
-    //  widthEventTarget is the 0–1 value injected into smoothWidth
-    //  in UpdateGeometry (see bottom of file). It lerps in/out so
-    //  transitions are always smooth and never jarring.
-    //
-    //  The existing `width` output is untouched in meaning — visual
-    //  systems and GetHalfWidth() read it exactly as before.
-    // ─────────────────────────────────────────────────────────────
+
 
     [Header("Width Events")]
     [Tooltip("0–1 chance per rhythm cycle that a narrow section triggers.")]
     [Range(0f, 1f)] public float narrowChance = 0.45f;
     [Tooltip("How far the road narrows. 1 = fully narrow (inspector width min), 0 = no change.")]
-    [Range(0f, 1f)] public float narrowStrength = 0.72f;  // drives width toward ~0.28
+    [Range(0f, 1f)] public float narrowStrength = 0.72f;  
     [Tooltip("Seconds the road stays at peak narrowness.")]
     public float narrowHoldDuration = 3.5f;
     [Tooltip("Seconds to widen out again after a narrow event (also used as intro ramp).")]
@@ -91,7 +69,7 @@ public class RoadState : MonoBehaviour
     [Tooltip("0–1 chance a wide-open section follows a narrow event.")]
     [Range(0f, 1f)] public float wideAfterNarrow = 0.55f;
     [Tooltip("How wide the road expands. 0 = no change, 1 = fully open.")]
-    [Range(0f, 1f)] public float wideStrength = 0.25f;  // drives width toward ~0.75
+    [Range(0f, 1f)] public float wideStrength = 0.25f;  
     public float wideHoldDuration = 4.0f;
     public float wideRampDuration = 2.5f;
 
@@ -100,14 +78,14 @@ public class RoadState : MonoBehaviour
     [Tooltip("Speed of the width breathing cycle in seconds (larger = slower).")]
     public float widthPulsePeriod = 11f;
 
-    // Internal width event state
+
     enum WidthEventType { None, NarrowIn, NarrowHold, NarrowOut, WideIn, WideHold, WideOut }
     WidthEventType widthEvent = WidthEventType.None;
     float widthEventTimer;
-    float widthEventTarget = 0.5f;   // neutral 0–1 value fed into smoothWidth
-    float widthEventOrigin = 0.5f;   // value at the moment the event started
+    float widthEventTarget = 0.5f;   
+    float widthEventOrigin = 0.5f;   
 
-    // ─────────────────────────────────────────────────────────────
+
 
     void Start()
     {
@@ -127,15 +105,11 @@ public class RoadState : MonoBehaviour
         UpdateSpiral();
         UpdateFlowCorridor();
         UpdateCompression();
-        UpdateWidthEvent();   // ← new, runs alongside existing events
+        UpdateWidthEvent();   
         UpdateGeometry();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    //  EVERYTHING BELOW THIS LINE IS IDENTICAL TO THE WORKING
-    //  VERSION — only UpdateGeometry has two lines added at the end
-    //  (clearly marked). Nothing existing is removed or modified.
-    // ═════════════════════════════════════════════════════════════
+
 
     void PickNewRhythm()
     {
@@ -151,11 +125,10 @@ public class RoadState : MonoBehaviour
         if (Random.value < 0.4f)
             StartCompression();
 
-        // ── Width event roll (additive) ──────────────────────────
-        // Only fire if no width event is currently running.
+
         if (widthEvent == WidthEventType.None && Random.value < narrowChance)
             StartNarrow();
-        // ────────────────────────────────────────────────────────
+
     }
 
     void StartSpiral()
@@ -219,15 +192,13 @@ public class RoadState : MonoBehaviour
             compressionActive = false;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  WIDTH EVENT STATE MACHINE  (new, additive)
-    // ─────────────────────────────────────────────────────────────
+
 
     void StartNarrow()
     {
         widthEvent = WidthEventType.NarrowIn;
         widthEventTimer = 0f;
-        widthEventOrigin = widthEventTarget;          // start from wherever we are
+        widthEventOrigin = widthEventTarget;        
     }
 
     void StartWide()
@@ -243,10 +214,10 @@ public class RoadState : MonoBehaviour
 
         switch (widthEvent)
         {
-            // ── Narrow ramp in ──────────────────────────────────
+
             case WidthEventType.NarrowIn:
                 {
-                    float target = 1f - narrowStrength;   // e.g. 0.28 when strength=0.72
+                    float target = 1f - narrowStrength;   
                     float frac = Mathf.Clamp01(widthEventTimer / narrowRampDuration);
                     widthEventTarget = Mathf.Lerp(widthEventOrigin, target, Mathf.SmoothStep(0f, 1f, frac));
                     if (frac >= 1f)
@@ -258,7 +229,7 @@ public class RoadState : MonoBehaviour
                     break;
                 }
 
-            // ── Narrow hold ─────────────────────────────────────
+
             case WidthEventType.NarrowHold:
                 if (widthEventTimer >= narrowHoldDuration)
                 {
@@ -268,10 +239,10 @@ public class RoadState : MonoBehaviour
                 }
                 break;
 
-            // ── Narrow ramp out — optionally transition to Wide ──
+
             case WidthEventType.NarrowOut:
                 {
-                    float target = 0.5f;                  // back to neutral
+                    float target = 0.5f;                  
                     float frac = Mathf.Clamp01(widthEventTimer / narrowRampDuration);
                     widthEventTarget = Mathf.Lerp(widthEventOrigin, target, Mathf.SmoothStep(0f, 1f, frac));
                     if (frac >= 1f)
@@ -287,10 +258,10 @@ public class RoadState : MonoBehaviour
                     break;
                 }
 
-            // ── Wide ramp in ────────────────────────────────────
+
             case WidthEventType.WideIn:
                 {
-                    float target = 0.5f + wideStrength * 0.5f;   // e.g. 0.625 when strength=0.25
+                    float target = 0.5f + wideStrength * 0.5f;   
                     float frac = Mathf.Clamp01(widthEventTimer / wideRampDuration);
                     widthEventTarget = Mathf.Lerp(widthEventOrigin, target, Mathf.SmoothStep(0f, 1f, frac));
                     if (frac >= 1f)
@@ -302,7 +273,7 @@ public class RoadState : MonoBehaviour
                     break;
                 }
 
-            // ── Wide hold ───────────────────────────────────────
+
             case WidthEventType.WideHold:
                 if (widthEventTimer >= wideHoldDuration)
                 {
@@ -312,7 +283,7 @@ public class RoadState : MonoBehaviour
                 }
                 break;
 
-            // ── Wide ramp out ───────────────────────────────────
+
             case WidthEventType.WideOut:
                 {
                     float target = 0.5f;
@@ -326,7 +297,7 @@ public class RoadState : MonoBehaviour
                     break;
                 }
 
-            // ── No event — gentle pulse keeps things alive ──────
+
             case WidthEventType.None:
                 widthEventTarget = 0.5f + Mathf.Sin(Time.time * (Mathf.PI * 2f / widthPulsePeriod))
                                         * widthPulseAmplitude;
@@ -334,11 +305,6 @@ public class RoadState : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  UPDATE GEOMETRY — identical to working version.
-    //  Two lines added at the very end (clearly marked) to blend
-    //  widthEventTarget into smoothWidth before it is written to width.
-    // ─────────────────────────────────────────────────────────────
 
     void UpdateGeometry()
     {
@@ -437,14 +403,9 @@ public class RoadState : MonoBehaviour
 
         smoothBank = Mathf.Lerp(smoothBank, dynamicBank, Time.deltaTime * 3f);
 
-        // ── WIDTH EVENT injection (additive — two lines only) ────
-        // Blend smoothWidth toward widthEventTarget at a gentle rate.
-        // When no event is running, widthEventTarget == 0.5 (neutral pulse)
-        // so this has near-zero effect. During events it steers width smoothly.
-        // The lerp speed (1.5) is slower than smoothWidth's own lerp (2.0)
-        // so it never snaps or fights the existing curvature-based narrowing.
+
         smoothWidth = Mathf.Lerp(smoothWidth, widthEventTarget, Time.deltaTime * 1.5f);
-        // ────────────────────────────────────────────────────────
+
 
         width = Mathf.Clamp01(smoothWidth);
         banking = Mathf.Clamp01(smoothBank);

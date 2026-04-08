@@ -63,9 +63,7 @@ public class NavigationFooterUI : MonoBehaviour
         UpdateFooter();
     }
 
-    // ==================================================
-    // INPUT MODE DETECTION
-    // ==================================================
+
     void DetectInputMode()
     {
         if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
@@ -81,9 +79,7 @@ public class NavigationFooterUI : MonoBehaviour
         }
     }
 
-    // ==================================================
-    // CONTROLLER TYPE DETECTION
-    // ==================================================
+
     void DetectControllerType()
     {
         if (Gamepad.current == null)
@@ -111,9 +107,7 @@ public class NavigationFooterUI : MonoBehaviour
         }
     }
 
-    // ==================================================
-    // BUILD CONTROLLER TEXT BASED ON TYPE
-    // ==================================================
+
     void BuildControllerStrings()
     {
         string select, back, pause;
@@ -145,9 +139,7 @@ public class NavigationFooterUI : MonoBehaviour
         pauseController = $"LS Navigate\n{select} Select\n{pause} Resume";
     }
 
-    // ==================================================
-    // APPLY TEXT
-    // ==================================================
+
     void UpdateFooter()
     {
         if (footerText == null) return;
@@ -176,9 +168,7 @@ public class NavigationFooterUI : MonoBehaviour
         }
     }
 
-    // ==================================================
-    // EXTERNAL CALL
-    // ==================================================
+
     public void SetMenuType(MenuType type)
     {
         currentMenuType = type;

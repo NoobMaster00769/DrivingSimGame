@@ -22,14 +22,14 @@ public class DrivingTutorial : MonoBehaviour
 
     const float MIN_STEP_TIME = 8f;
 
-    // ---------------- START ----------------
+
 
     public void StartTutorial()
     {
         var pause = FindObjectOfType<PauseSystem>();
         pause.Resume();
 
-        isTutorialActive = true; // 🔥 IMPORTANT
+        isTutorialActive = true; 
 
         gameObject.SetActive(true);
 
@@ -53,16 +53,16 @@ public class DrivingTutorial : MonoBehaviour
         context.currentGear = 0;
     }
 
-    // ---------------- UPDATE ----------------
+
     bool lastMode;
     void Update()
     {
         if (!enabled) return;
 
-        // 🔥 ONLY RUN WHEN ACTIVE
+
         if (!isTutorialActive) return;
 
-        // 🔥 STOP if paused or menu
+
         if (GameStateController.Instance.currentState != GameState.Driving)
         {
             HideUI();
@@ -107,7 +107,7 @@ public class DrivingTutorial : MonoBehaviour
     {
         float t = Time.unscaledTime;
 
-        // 🎮 detect controller input
+
         if (Gamepad.all.Count > 0)
         {
             var gp = Gamepad.all[0];
@@ -125,13 +125,13 @@ public class DrivingTutorial : MonoBehaviour
             }
         }
 
-        // ⌨️ detect keyboard input
+
         if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
         {
             lastKeyboardTime = t;
         }
 
-        // 🔥 decide based on MOST RECENT input
+
         usingController = lastControllerTime > lastKeyboardTime;
     }
 
@@ -143,7 +143,7 @@ public class DrivingTutorial : MonoBehaviour
         ShowStep();
     }
 
-    // ---------------- UI ----------------
+
 
     void ShowStep()
     {
@@ -270,15 +270,15 @@ Press any key");
         }
     }
 
-    // ---------------- STEPS ----------------
 
-    const float MAX_STEP_TIME = 15f; // auto progress safety
 
-    // ---------------- STEP HELPERS ----------------
+    const float MAX_STEP_TIME = 15f; 
+
+
 
     bool Timeout() => stepTime > MAX_STEP_TIME;
 
-    // ---------------- STEPS ----------------
+
 
     void EngageDrive()
     {
@@ -358,7 +358,7 @@ Press any key");
             Next();
     }
 
-    // ---------------- EXIT ----------------
+
 
     void LateUpdate()
     {
@@ -383,7 +383,7 @@ Press any key");
     {
         var pause = FindObjectOfType<PauseSystem>();
 
-        isTutorialActive = false; // 🔥 STOP EVERYTHING
+        isTutorialActive = false; 
 
         HideUI();
 
@@ -393,7 +393,7 @@ Press any key");
         gameObject.SetActive(false);
     }
 
-    // ---------------- BINDINGS ----------------
+
 
     string GetBinding(string actionName)
     {
@@ -403,7 +403,7 @@ Press any key");
         {
             foreach (var item in controllerItems)
             {
-                item.EnsureInitialized(actions);   // 🔥 KEY FIX
+                item.EnsureInitialized(actions);   
                 item.UpdateDisplay();
 
                 if (item.actionName == actionName &&
@@ -433,7 +433,7 @@ Press any key");
         {
             foreach (var item in controllerItems)
             {
-                item.EnsureInitialized(actions);   // 🔥 KEY FIX
+                item.EnsureInitialized(actions);   
                 item.UpdateDisplay();
 
                 if (item.actionName == actionName &&
